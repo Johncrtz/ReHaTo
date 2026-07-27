@@ -47,6 +47,12 @@ credentials live in [`js/config.js`](../js/config.js).
 Until both are done, enabling sync in the app shows a sync error and
 the app keeps working locally.
 
+**Verify everything with one click:** open
+[`/synctest.html`](https://johncrtz.github.io/ReHaTo/synctest.html) —
+it signs in, checks every table, runs a real write/read/delete
+round-trip against the project, and shows exactly what (if anything)
+is still missing, with direct links into the dashboard.
+
 Note: the publishable key is *meant* to be public — security comes from
 Row Level Security in the database, not from hiding the key.
 

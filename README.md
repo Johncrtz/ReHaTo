@@ -5,6 +5,8 @@ reflecting on your day, building habits, and keeping track of your thoughts.
 
 **Live:** https://johncrtz.github.io/ReHaTo/
 **Demo with sample data:** https://johncrtz.github.io/ReHaTo/?demo=1
+**Sync diagnostics:** https://johncrtz.github.io/ReHaTo/synctest.html — full
+end-to-end test of the Supabase backend, with fix-it links for anything red
 
 ## Features
 

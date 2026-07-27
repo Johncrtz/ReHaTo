@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ReHaTo · Sync-Check</title>
+  <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+  <style>
+    :root { --bg:#faf9f5; --ink:#26251f; --muted:#8a857a; --line:#eae7de; --accent:#4e7f62; --soft:#edf2ec; --bad:#b3543f; }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg:#161815; --ink:#e8e6df; --muted:#96917f; --line:#2b2e28; --accent:#85b494; --soft:#222b23; --bad:#d98b76; }
+    }
+    * { box-sizing: border-box; }
+    body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.55 ui-sans-serif,system-ui,sans-serif; }
+    main { max-width:680px; margin:0 auto; padding:32px 20px 60px; }
+    h1 { font-size:1.3rem; letter-spacing:-.015em; margin:0 0 4px; }
+    .sub { color:var(--muted); font-size:.9rem; margin:0 0 24px; }
+    .step { display:flex; gap:12px; padding:12px 2px; border-top:1px solid var(--line); align-items:flex-start; }
+    .step .st { flex:none; width:24px; text-align:center; }
+    .step .body { flex:1; min-width:0; }
+    .step .name { font-weight:600; }
+    .step .msg { color:var(--muted); font-size:.88rem; overflow-wrap:anywhere; }
+    .hint { margin-top:8px; padding:10px 12px; background:var(--soft); border-radius:10px; font-size:.88rem; }
+    .hint a { color:var(--accent); font-weight:600; }
+    .verdict { margin-top:22px; padding:14px 16px; border-radius:12px; font-weight:600; }
+    .verdict.ok { background:var(--soft); color:var(--accent); }
+    .verdict.bad { background:var(--soft); color:var(--bad); }
+    button.copy { margin-top:8px; background:var(--accent); color:#fff; border:none; border-radius:9px; padding:8px 14px; font:inherit; font-size:.86rem; font-weight:600; cursor:pointer; }
+    .foot { margin-top:26px; color:var(--muted); font-size:.8rem; }
+    .foot a { color:var(--muted); }
+    code { background:var(--soft); border-radius:5px; padding:1px 5px; font-size:.85em; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>🧪 ReHaTo Sync-Check</h1>
+  <p class="sub">Tests the full chain browser → Supabase: sign-in, tables, and a real write/read/delete round-trip. Safe to run anytime — it only touches its own test rows.</p>
+  <div id="steps"></div>
+  <div id="verdict"></div>
+  <p class="foot"><a href="./">← back to ReHaTo</a> · The anonymous test account is reused by the app when you enable sync, so nothing is orphaned.</p>
+</main>
+
+<script type="module">
+import { CONFIG } from './js/config.js';
+
+const REF = new URL(CONFIG.supabaseUrl).hostname.split('.')[0];
+const SQL_URL = `https://supabase.com/dashboard/project/${REF}/sql/new`;
+const AUTH_URL = `https://supabase.com/dashboard/project/${REF}/auth/providers`;
+
+const stepsEl = document.getElementById('steps');
+function step(name) {
+  const el = document.createElement('div');
+  el.className = 'step';
+  el.innerHTML = `<div class="st">⏳</div><div class="body"><div class="name">${name}</div><div class="msg"></div></div>`;
+  stepsEl.appendChild(el);
+  return {
+    ok(msg = 'OK') { el.querySelector('.st').textContent = '✅'; el.querySelector('.msg').textContent = msg; },
+    fail(msg, hintHtml) {
+      el.querySelector('.st').textContent = '❌';
+      el.querySelector('.msg').textContent = msg;
+      if (hintHtml) {
+        const h = document.createElement('div');
+        h.className = 'hint';
+        h.innerHTML = hintHtml;
+        el.querySelector('.body').appendChild(h);
+      }
+    },
+  };
+}
+
+const schemaHint = `<b>Fix:</b> the database tables are missing. Open the
+  <a href="${SQL_URL}" target="_blank" rel="noopener">SQL editor</a>, paste the schema and click <i>Run</i>.
+  <br><button class="copy" id="copy-schema">📋 Copy schema.sql</button> <span id="copy-state"></span>`;
+const anonHint = `<b>Fix:</b> anonymous sign-ins are disabled. Open
+  <a href="${AUTH_URL}" target="_blank" rel="noopener">Authentication → Sign In / Up</a>
+  and enable <b>“Anonymous sign-ins”</b>, then reload this page.`;
+
+function wireSchemaCopy() {
+  const btn = document.getElementById('copy-schema');
+  if (!btn) return;
+  btn.addEventListener('click', async () => {
+    const sql = await (await fetch('./backend/schema.sql')).text();
+    await navigator.clipboard.writeText(sql);
+    document.getElementById('copy-state').textContent = 'copied ✓';
+  });
+}
+
+function isMissingTable(error) {
+  return error && (error.code === 'PGRST205' || error.code === '42P01' || /find the table|does not exist/i.test(error.message || ''));
+}
+
+async function run() {
+  let failed = false;
+  const done = (v) => {
+    const el = document.getElementById('verdict');
+    el.className = 'verdict ' + (v ? 'ok' : 'bad');
+    el.textContent = v
+      ? '🎉 Everything works — sync is fully functional. Open ReHaTo and tap the ☁️ button.'
+      : 'Not functional yet — fix the ❌ steps above (each has instructions), then reload this page.';
+  };
+
+  // 1 — load library
+  const s1 = step('Load Supabase client library (CDN)');
+  let createClient;
+  try {
+    ({ createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'));
+    s1.ok();
+  } catch (e) { s1.fail(String(e), 'Network or CDN problem — check your connection and reload.'); return done(false); }
+
+  const sb = createClient(CONFIG.supabaseUrl, CONFIG.supabaseAnonKey);
+
+  // 2 — anonymous sign-in
+  const s2 = step('Anonymous sign-in');
+  try {
+    let { data: { session } } = await sb.auth.getSession();
+    if (!session) {
+      const { data, error } = await sb.auth.signInAnonymously();
+      if (error) throw error;
+      session = data.session;
+    }
+    s2.ok(`user ${session.user.id.slice(0, 8)}…`);
+  } catch (e) { s2.fail(e.message || String(e), anonHint); return done(false); }
+
+  // 3 — tables exist
+  const tables = [['habits', 'id'], ['reflections', 'id'], ['habit_logs', 'habit_id'], ['items', 'id']];
+  let tablesOk = true;
+  for (const [table, col] of tables) {
+    const st = step(`Table “${table}”`);
+    const { error } = await sb.from(table).select(col).limit(1);
+    if (error) {
+      tablesOk = false; failed = true;
+      st.fail(`${error.code || ''} ${error.message}`, isMissingTable(error) ? schemaHint : undefined);
+    } else st.ok();
+  }
+  wireSchemaCopy();
+  if (!tablesOk) return done(false);
+
+  // 4 — full round-trip with self-cleaning test rows
+  const s4 = step('Write / read / delete round-trip');
+  try {
+    const { data: habit, error: e1 } = await sb.from('habits')
+      .insert({ name: '🧪 SyncTest', icon: '🧪' }).select().single();
+    if (e1) throw e1;
+
+    const { error: e2 } = await sb.from('habit_logs').insert({ habit_id: habit.id, date: '1999-01-02' });
+    if (e2) throw e2;
+
+    const { error: e3 } = await sb.from('reflections')
+      .upsert({ date: '1999-01-01', text: 'synctest', mood: 2 }, { onConflict: 'user_id,date' });
+    if (e3) throw e3;
+
+    const { data: item, error: e4 } = await sb.from('items')
+      .insert({ kind: 'todo', text: '🧪 synctest', done: false }).select().single();
+    if (e4) throw e4;
+    const { error: e5 } = await sb.from('items').update({ done: true }).eq('id', item.id);
+    if (e5) throw e5;
+
+    // read back
+    const { data: check, error: e6 } = await sb.from('habits').select('id').eq('id', habit.id);
+    if (e6) throw e6;
+    if (!check.length) throw new Error('read-back failed: inserted habit not visible (RLS problem?)');
+
+    // clean up (habit delete cascades its log)
+    await sb.from('items').delete().eq('id', item.id);
+    await sb.from('reflections').delete().eq('date', '1999-01-01');
+    await sb.from('habits').delete().eq('id', habit.id);
+
+    s4.ok('insert, update, read-back and delete all succeeded');
+  } catch (e) {
+    failed = true;
+    s4.fail(`${e.code || ''} ${e.message || e}`,
+      'Tables exist but writing failed. Most likely the Row Level Security policies are missing — re-run the full <code>schema.sql</code> (it is idempotent), then reload.');
+  }
+
+  done(!failed);
+}
+
+run();
+</script>
+</body>
+</html>

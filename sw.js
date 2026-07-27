@@ -1,5 +1,5 @@
 // ReHaTo service worker — offline cache (network-first) + notification host.
-const CACHE = 'rehato-v0.2.0';
+const CACHE = 'rehato-v0.2.1';
 const PRECACHE = [
   './', './index.html', './css/styles.css', './manifest.webmanifest', './icons/icon.svg',
   './js/main.js', './js/config.js', './js/i18n.js', './js/store.js', './js/ui.js',
@@ -19,10 +19,13 @@ self.addEventListener('activate', event => {
 });
 
 // Network-first: always try fresh (so feedback iterations show up),
-// fall back to cache when offline.
+// fall back to cache when offline. The supabase-js CDN module is cached
+// too, so cloud mode can still boot without a network connection.
 self.addEventListener('fetch', event => {
   const { request } = event;
-  if (request.method !== 'GET' || !request.url.startsWith(self.location.origin)) return;
+  const cacheable = request.url.startsWith(self.location.origin)
+    || request.url.startsWith('https://cdn.jsdelivr.net/');
+  if (request.method !== 'GET' || !cacheable) return;
   event.respondWith(
     fetch(request)
       .then(response => {

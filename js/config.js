@@ -8,5 +8,5 @@
 export const CONFIG = {
   supabaseUrl: 'https://epfdjgnizfszhuenjzkw.supabase.co',
   supabaseAnonKey: 'sb_publishable_K7R-oQSjUtJKSB3TCPvtWA_Cvfi1PDZ',
-  version: '0.2.0',
+  version: '0.2.1',
 };

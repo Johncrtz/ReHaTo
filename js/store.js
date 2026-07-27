@@ -170,6 +170,10 @@ class SupabaseAdapter {
     console.error('[ReHaTo] sync error', e);
     showToast(t('sync.error'));
   }
+  // Write-through mirror: every confirmed cloud state is copied into
+  // localStorage, so going offline (or disabling sync) never shows an
+  // empty app — you always keep the last-known data.
+  mirror(key, value) { this.local.write(key, value); }
 
   getSettings() { return this.local.getSettings(); }
   patchSettings(p) { return this.local.patchSettings(p); }
@@ -182,6 +186,7 @@ class SupabaseAdapter {
         this.cache.notes = Object.fromEntries(
           data.map(r => [r.date, { text: r.text, mood: r.mood, updatedAt: Date.parse(r.updated_at) }])
         );
+        this.mirror('notes', this.cache.notes);
       } catch (e) { this.fail(e); return this.cache.notes || {}; }
     }
     return this.cache.notes;
@@ -194,6 +199,7 @@ class SupabaseAdapter {
         .upsert({ date: key, text, mood, updated_at: new Date().toISOString() }, { onConflict: 'user_id,date' });
       if (error) throw error;
       (await this.listNotes())[key] = { text, mood, updatedAt: Date.now() };
+      this.mirror('notes', this.cache.notes);
       return this.cache.notes[key];
     } catch (e) { this.fail(e); return null; }
   }
@@ -201,7 +207,7 @@ class SupabaseAdapter {
     try {
       const { error } = await this.sb.from('reflections').delete().eq('date', key);
       if (error) throw error;
-      if (this.cache.notes) delete this.cache.notes[key];
+      if (this.cache.notes) { delete this.cache.notes[key]; this.mirror('notes', this.cache.notes); }
     } catch (e) { this.fail(e); }
   }
 
@@ -212,6 +218,7 @@ class SupabaseAdapter {
           .select('id,name,icon,created_at').eq('archived', false).order('created_at');
         if (error) throw error;
         this.cache.habits = data.map(r => ({ id: r.id, name: r.name, icon: r.icon, createdAt: Date.parse(r.created_at) }));
+        this.mirror('habits', this.cache.habits);
       } catch (e) { this.fail(e); return this.cache.habits || []; }
     }
     return this.cache.habits;
@@ -222,6 +229,7 @@ class SupabaseAdapter {
       if (error) throw error;
       const habit = { id: data.id, name: data.name, icon: data.icon, createdAt: Date.parse(data.created_at) };
       (await this.listHabits()).push(habit);
+      this.mirror('habits', this.cache.habits);
       return habit;
     } catch (e) { this.fail(e); return null; }
   }
@@ -229,8 +237,8 @@ class SupabaseAdapter {
     try {
       const { error } = await this.sb.from('habits').delete().eq('id', id);
       if (error) throw error;
-      if (this.cache.habits) this.cache.habits = this.cache.habits.filter(h => h.id !== id);
-      if (this.cache.logs) delete this.cache.logs[id];
+      if (this.cache.habits) { this.cache.habits = this.cache.habits.filter(h => h.id !== id); this.mirror('habits', this.cache.habits); }
+      if (this.cache.logs) { delete this.cache.logs[id]; this.mirror('logs', this.cache.logs); }
     } catch (e) { this.fail(e); }
   }
 
@@ -242,6 +250,7 @@ class SupabaseAdapter {
         const logs = {};
         for (const r of data) (logs[r.habit_id] || (logs[r.habit_id] = {}))[r.date] = true;
         this.cache.logs = logs;
+        this.mirror('logs', logs);
       } catch (e) { this.fail(e); return this.cache.logs || {}; }
     }
     return this.cache.logs;
@@ -259,6 +268,7 @@ class SupabaseAdapter {
         if (error) throw error;
         (logs[habitId] || (logs[habitId] = {}))[key] = true;
       }
+      this.mirror('logs', logs);
       return !has;
     } catch (e) { this.fail(e); return has; }
   }
@@ -270,6 +280,7 @@ class SupabaseAdapter {
           .select('id,kind,text,done,created_at').order('created_at', { ascending: false });
         if (error) throw error;
         this.cache.items = data.map(r => ({ id: r.id, kind: r.kind, text: r.text, done: r.done, createdAt: Date.parse(r.created_at) }));
+        this.mirror('items', this.cache.items);
       } catch (e) { this.fail(e); return this.cache.items || []; }
     }
     return this.cache.items;
@@ -280,6 +291,7 @@ class SupabaseAdapter {
       if (error) throw error;
       const item = { id: data.id, kind: data.kind, text: data.text, done: data.done, createdAt: Date.parse(data.created_at) };
       (await this.listItems()).unshift(item);
+      this.mirror('items', this.cache.items);
       return item;
     } catch (e) { this.fail(e); return null; }
   }
@@ -291,20 +303,21 @@ class SupabaseAdapter {
       const { error } = await this.sb.from('items').update({ done: !it.done }).eq('id', id);
       if (error) throw error;
       it.done = !it.done;
+      this.mirror('items', items);
     } catch (e) { this.fail(e); }
   }
   async deleteItem(id) {
     try {
       const { error } = await this.sb.from('items').delete().eq('id', id);
       if (error) throw error;
-      if (this.cache.items) this.cache.items = this.cache.items.filter(i => i.id !== id);
+      if (this.cache.items) { this.cache.items = this.cache.items.filter(i => i.id !== id); this.mirror('items', this.cache.items); }
     } catch (e) { this.fail(e); }
   }
   async clearDoneItems() {
     try {
       const { error } = await this.sb.from('items').delete().eq('kind', 'todo').eq('done', true);
       if (error) throw error;
-      if (this.cache.items) this.cache.items = this.cache.items.filter(i => !(i.kind === 'todo' && i.done));
+      if (this.cache.items) { this.cache.items = this.cache.items.filter(i => !(i.kind === 'todo' && i.done)); this.mirror('items', this.cache.items); }
     } catch (e) { this.fail(e); }
   }
 
