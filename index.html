@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ReHaTo – Reflektieren · Gewohnheiten · To-dos</title>
+  <meta name="description" content="ReHaTo: Reflektiere deinen Tag, baue Gewohnheiten auf und behalte deine To-dos im Blick.">
+  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f6f4ee">
+  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#181b19">
+  <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <header class="app-header">
+    <div class="brand">
+      <svg class="logo" viewBox="0 0 512 512" aria-hidden="true">
+        <rect width="512" height="512" rx="118" fill="url(#g)"/>
+        <defs>
+          <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#5d8f6e"/><stop offset="1" stop-color="#41715a"/>
+          </linearGradient>
+        </defs>
+        <path d="M256 408 V232" stroke="#fff" stroke-width="34" stroke-linecap="round"/>
+        <path d="M256 252 C186 252 140 210 134 138 C210 142 252 186 256 252 Z" fill="#fff"/>
+        <path d="M256 252 C326 252 372 210 378 138 C302 142 260 186 256 252 Z" fill="#fff" opacity=".82"/>
+      </svg>
+      <div class="brand-text">
+        <span class="wordmark">ReHaTo</span>
+        <span class="tagline" data-i18n="app.tagline"></span>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button id="lang-toggle" class="chip" data-i18n-title="lang.label">EN</button>
+      <button id="theme-toggle" class="chip" data-i18n-title="theme.label">🌙</button>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <a href="#calendar" class="tab active" data-view="calendar"><span class="tab-ico">📅</span> <span data-i18n="nav.calendar"></span></a>
+    <a href="#habits" class="tab" data-view="habits"><span class="tab-ico">🌱</span> <span data-i18n="nav.habits"></span></a>
+    <a href="#todos" class="tab" data-view="todos"><span class="tab-ico">📝</span> <span data-i18n="nav.todos"></span></a>
+  </nav>
+
+  <main id="main">
+    <div id="demo-banner" class="demo-banner hidden">
+      <span data-i18n="demo.banner"></span> <a href="./" data-i18n="demo.exit"></a>
+    </div>
+    <section id="view-calendar" class="view"></section>
+    <section id="view-habits" class="view hidden"></section>
+    <section id="view-todos" class="view hidden"></section>
+  </main>
+
+  <!-- Day note editor -->
+  <div id="modal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="dialog card">
+      <div class="dialog-head">
+        <h2 class="modal-date"></h2>
+        <span class="saved-chip" data-i18n="modal.saved"></span>
+      </div>
+      <div class="mood-block">
+        <span class="mood-label" data-i18n="modal.mood"></span>
+        <div class="mood-row"></div>
+      </div>
+      <textarea id="note-text" rows="8" data-i18n-placeholder="modal.placeholder"></textarea>
+      <div class="dialog-foot">
+        <button class="btn-ghost danger hidden" data-delete-note data-i18n="modal.delete"></button>
+        <button class="btn" data-close data-i18n="modal.close"></button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" role="status"></div>
+
+  <footer class="app-footer">
+    <span data-i18n="footer.local"></span>
+    <span>·</span>
+    <span id="version"></span>
+    <span>·</span>
+    <a href="https://github.com/Johncrtz/ReHaTo" target="_blank" rel="noopener">GitHub</a>
+  </footer>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

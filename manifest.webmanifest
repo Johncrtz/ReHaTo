@@ -1,0 +1,14 @@
+{
+  "name": "ReHaTo – Reflektieren · Gewohnheiten · To-dos",
+  "short_name": "ReHaTo",
+  "description": "Reflektiere deinen Tag, baue Gewohnheiten auf und behalte deine To-dos im Blick.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f6f4ee",
+  "theme_color": "#4e7f62",
+  "icons": [
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}

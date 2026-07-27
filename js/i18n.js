@@ -1,0 +1,132 @@
+// Tiny i18n layer — German default, English available.
+const dict = {
+  de: {
+    'app.tagline': 'Reflektieren · Gewohnheiten · To-dos',
+    'nav.calendar': 'Kalender',
+    'nav.habits': 'Gewohnheiten',
+    'nav.todos': 'Notizen',
+    'demo.banner': 'Demo-Modus: Beispieldaten – Änderungen werden nicht gespeichert.',
+    'demo.exit': 'Demo beenden',
+    'footer.local': 'Deine Daten bleiben in diesem Browser.',
+    'cal.today': 'Heute',
+    'cal.prev': 'Voriger Monat',
+    'cal.next': 'Nächster Monat',
+    'cal.recent': 'Letzte Einträge',
+    'cal.empty': 'Noch keine Einträge. Tippe auf einen Tag und schreib den ersten. 🌱',
+    'modal.placeholder': 'Wie war dein Tag? Was beschäftigt dich? Wofür bist du dankbar?',
+    'modal.mood': 'Stimmung',
+    'modal.saved': 'Gespeichert ✓',
+    'modal.delete': 'Eintrag löschen',
+    'modal.deleteConfirm': 'Diesen Eintrag wirklich löschen?',
+    'modal.close': 'Fertig',
+    'hab.progress': 'Heute geschafft: {done} / {total}',
+    'hab.empty': 'Leg deine erste Gewohnheit an – klein anfangen wirkt. 🌱',
+    'hab.streak': '{n} Tage',
+    'hab.add.placeholder': 'Neue Gewohnheit (z. B. 10 Min. lesen)',
+    'hab.add.btn': 'Hinzufügen',
+    'hab.deleteConfirm': '„{name}“ und alle Einträge löschen?',
+    'hab.delete': 'Gewohnheit löschen',
+    'hab.rem.title': 'Erinnerungen',
+    'hab.rem.enable': 'Benachrichtigungen aktivieren',
+    'hab.rem.time': 'Tägliche Erinnerung um',
+    'hab.rem.on': 'Erinnerungen aktiv',
+    'hab.rem.denied': 'Benachrichtigungen sind im Browser blockiert. Erlaube sie in den Seiteneinstellungen.',
+    'hab.rem.unsupported': 'Dieser Browser unterstützt keine Benachrichtigungen.',
+    'hab.rem.note': 'Erinnerungen funktionieren, solange ReHaTo im Browser geöffnet oder als App installiert ist. Echte Push-Erinnerungen kommen mit dem Backend (Phase 2).',
+    'notif.title': 'ReHaTo',
+    'notif.open': 'Noch {n} Gewohnheit(en) offen heute – du schaffst das! 💪',
+    'notif.allDone': 'Alle Gewohnheiten geschafft – stark! 🎉',
+    'notif.enabled': 'Erinnerungen sind aktiv. 🌱',
+    'todo.typeTodo': 'To-do',
+    'todo.typeThought': 'Gedanke',
+    'todo.placeholderTodo': 'Was steht an?',
+    'todo.placeholderThought': 'Was geht dir durch den Kopf?',
+    'todo.add': 'Hinzufügen',
+    'todo.open': 'Offen',
+    'todo.thoughts': 'Gedanken',
+    'todo.done': 'Erledigt',
+    'todo.clearDone': 'Erledigte entfernen',
+    'todo.emptyTodos': 'Nichts offen – genieß den Moment. ✨',
+    'todo.emptyThoughts': 'Noch keine Gedanken notiert.',
+    'theme.label': 'Design wechseln',
+    'lang.label': 'Switch to English',
+  },
+  en: {
+    'app.tagline': 'Reflect · Habits · To-dos',
+    'nav.calendar': 'Calendar',
+    'nav.habits': 'Habits',
+    'nav.todos': 'Notes',
+    'demo.banner': 'Demo mode: sample data – changes are not saved.',
+    'demo.exit': 'Exit demo',
+    'footer.local': 'Your data stays in this browser.',
+    'cal.today': 'Today',
+    'cal.prev': 'Previous month',
+    'cal.next': 'Next month',
+    'cal.recent': 'Recent entries',
+    'cal.empty': 'No entries yet. Tap a day and write your first one. 🌱',
+    'modal.placeholder': 'How was your day? What is on your mind? What are you grateful for?',
+    'modal.mood': 'Mood',
+    'modal.saved': 'Saved ✓',
+    'modal.delete': 'Delete entry',
+    'modal.deleteConfirm': 'Really delete this entry?',
+    'modal.close': 'Done',
+    'hab.progress': 'Done today: {done} / {total}',
+    'hab.empty': 'Add your first habit – starting small works. 🌱',
+    'hab.streak': '{n} days',
+    'hab.add.placeholder': 'New habit (e.g. read 10 min)',
+    'hab.add.btn': 'Add',
+    'hab.deleteConfirm': 'Delete “{name}” and all its check-ins?',
+    'hab.delete': 'Delete habit',
+    'hab.rem.title': 'Reminders',
+    'hab.rem.enable': 'Enable notifications',
+    'hab.rem.time': 'Daily reminder at',
+    'hab.rem.on': 'Reminders active',
+    'hab.rem.denied': 'Notifications are blocked in this browser. Allow them in the site settings.',
+    'hab.rem.unsupported': 'This browser does not support notifications.',
+    'hab.rem.note': 'Reminders work while ReHaTo is open in the browser or installed as an app. Real push reminders arrive with the backend (phase 2).',
+    'notif.title': 'ReHaTo',
+    'notif.open': 'Still {n} habit(s) open today – you’ve got this! 💪',
+    'notif.allDone': 'All habits done – strong! 🎉',
+    'notif.enabled': 'Reminders are active. 🌱',
+    'todo.typeTodo': 'To-do',
+    'todo.typeThought': 'Thought',
+    'todo.placeholderTodo': 'What needs doing?',
+    'todo.placeholderThought': 'What’s on your mind?',
+    'todo.add': 'Add',
+    'todo.open': 'Open',
+    'todo.thoughts': 'Thoughts',
+    'todo.done': 'Done',
+    'todo.clearDone': 'Clear done',
+    'todo.emptyTodos': 'Nothing open – enjoy the moment. ✨',
+    'todo.emptyThoughts': 'No thoughts noted yet.',
+    'theme.label': 'Toggle theme',
+    'lang.label': 'Auf Deutsch wechseln',
+  },
+};
+
+let lang = 'de';
+
+export function setLang(l) {
+  lang = dict[l] ? l : 'de';
+  document.documentElement.lang = lang;
+}
+export function getLang() { return lang; }
+export function locale() { return lang === 'de' ? 'de-DE' : 'en-GB'; }
+
+export function t(key, vars = {}) {
+  let s = dict[lang][key] ?? dict.de[key] ?? key;
+  for (const [k, v] of Object.entries(vars)) s = s.replaceAll(`{${k}}`, String(v));
+  return s;
+}
+
+// Fill every element carrying data-i18n / data-i18n-title with its translation.
+export function applyStatic(root = document) {
+  root.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
+  root.querySelectorAll('[data-i18n-title]').forEach(el => {
+    el.title = t(el.dataset.i18nTitle);
+    el.setAttribute('aria-label', t(el.dataset.i18nTitle));
+  });
+  root.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    el.placeholder = t(el.dataset.i18nPlaceholder);
+  });
+}
