@@ -17,6 +17,10 @@ end-to-end test of the Supabase backend, with fix-it links for anything red
   still open — or congratulates you when everything's done.
 - 📝 **Notes & to-dos** — quick capture for tasks (checkable) and free
   thoughts.
+- 📚 **Books** — track reading progress (page / total with a progress bar),
+  and capture quotes & notes per book.
+- ❝ **Quotes** — every saved quote on one quiet wall, in italics with
+  proper quotation marks and book attribution.
 - ☁️ **Opt-in anonymous cloud sync** (Supabase) — off by default; one tap
   creates an anonymous account (no name/email) and keeps data synced.
 - 🌗 Dark/light mode · 🇩🇪/🇬🇧 language toggle · 📲 installable as a PWA ·
@@ -78,5 +82,6 @@ backend/                Supabase schema + connection guide (not live yet)
 - [x] **Phase 1** — frontend on GitHub Pages, data in localStorage
 - [x] **Phase 2** — Supabase: opt-in anonymous auth + sync
       (requires one-time dashboard setup, see `backend/README.md`)
-- [ ] **Phase 3** — real push reminders via Edge Functions + Web Push
-- [ ] **Phase 4** — custom domain · favorite book quotes collection
+- [x] **Phase 3** — books with reading progress + quotes collection
+- [ ] **Phase 4** — real push reminders via Edge Functions + Web Push
+- [ ] **Phase 5** — custom domain (staying on the github.io URL for now)

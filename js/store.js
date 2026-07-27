@@ -117,6 +117,38 @@ class LocalAdapter {
   async clearDoneItems() {
     this.write('items', (await this.listItems()).filter(i => !(i.kind === 'todo' && i.done)));
   }
+
+  async listBooks() { return this.read('books', []); }
+  async addBook({ title, author = '', totalPages = null }) {
+    const book = { id: uid(), title, author, totalPages, currentPage: 0, createdAt: Date.now() };
+    const books = await this.listBooks();
+    books.push(book);
+    this.write('books', books);
+    return book;
+  }
+  async updateBook(id, patch) {
+    const books = await this.listBooks();
+    const book = books.find(b => b.id === id);
+    if (book) Object.assign(book, patch);
+    this.write('books', books);
+    return book || null;
+  }
+  async deleteBook(id) {
+    this.write('books', (await this.listBooks()).filter(b => b.id !== id));
+    this.write('bookEntries', (await this.listBookEntries()).filter(e => e.bookId !== id));
+  }
+
+  async listBookEntries() { return this.read('bookEntries', []); }
+  async addBookEntry({ bookId, kind, text, page = null }) {
+    const entry = { id: uid(), bookId, kind, text, page, createdAt: Date.now() };
+    const entries = await this.listBookEntries();
+    entries.unshift(entry);
+    this.write('bookEntries', entries);
+    return entry;
+  }
+  async deleteBookEntry(id) {
+    this.write('bookEntries', (await this.listBookEntries()).filter(e => e.id !== id));
+  }
 }
 
 /* ── demo mode ─────────────────────────────────────────────── */
@@ -152,7 +184,17 @@ function makeDemoSeed() {
     { id: 't4', text: 'Idee: Abendspaziergang als festes Ritual etablieren', kind: 'thought', done: false, createdAt: Date.now() },
     { id: 't5', text: '„Wir sind, was wir wiederholt tun.“ – schönes Zitat für die Startseite?', kind: 'thought', done: false, createdAt: Date.now() },
   ];
-  return { habits, logs, notes, items, settings: { theme: 'auto', lang: null, remindersEnabled: false, reminderTime: '20:00', lastReminderDate: null, syncEnabled: false } };
+  const books = [
+    { id: 'b1', title: 'Der Alchimist', author: 'Paulo Coelho', totalPages: 208, currentPage: 132, createdAt: Date.now() },
+    { id: 'b2', title: 'Atomic Habits', author: 'James Clear', totalPages: 320, currentPage: 320, createdAt: Date.now() },
+  ];
+  const bookEntries = [
+    { id: 'q1', bookId: 'b1', kind: 'quote', text: 'Wenn du etwas ganz fest willst, dann wird das ganze Universum dazu beitragen, dass du es auch erreichst.', page: 40, createdAt: Date.now() - 86400000 },
+    { id: 'q2', bookId: 'b2', kind: 'quote', text: 'You do not rise to the level of your goals. You fall to the level of your systems.', page: 27, createdAt: Date.now() - 172800000 },
+    { id: 'q3', bookId: 'b2', kind: 'quote', text: 'Every action you take is a vote for the type of person you wish to become.', page: 38, createdAt: Date.now() - 259200000 },
+    { id: 'n1', bookId: 'b2', kind: 'note', text: 'Habit Stacking direkt in ReHaTo ausprobieren: nach dem Kaffee → 10 Min. lesen.', page: null, createdAt: Date.now() - 90000000 },
+  ];
+  return { habits, logs, notes, items, books, bookEntries, settings: { theme: 'auto', lang: null, remindersEnabled: false, reminderTime: '20:00', lastReminderDate: null, syncEnabled: false } };
 }
 
 /* ── supabase (cloud) ──────────────────────────────────────── */
@@ -321,9 +363,99 @@ class SupabaseAdapter {
     } catch (e) { this.fail(e); }
   }
 
+
+  async listBooks() {
+    if (!this.cache.books) {
+      try {
+        const { data, error } = await this.sb.from('books')
+          .select('id,title,author,total_pages,current_page,created_at').order('created_at');
+        if (error) throw error;
+        this.cache.books = data.map(r => ({
+          id: r.id, title: r.title, author: r.author || '',
+          totalPages: r.total_pages, currentPage: r.current_page,
+          createdAt: Date.parse(r.created_at),
+        }));
+        this.mirror('books', this.cache.books);
+      } catch (e) { this.fail(e); return this.cache.books || []; }
+    }
+    return this.cache.books;
+  }
+  async addBook({ title, author = '', totalPages = null }) {
+    try {
+      const { data, error } = await this.sb.from('books')
+        .insert({ title, author, total_pages: totalPages }).select().single();
+      if (error) throw error;
+      const book = {
+        id: data.id, title: data.title, author: data.author || '',
+        totalPages: data.total_pages, currentPage: data.current_page,
+        createdAt: Date.parse(data.created_at),
+      };
+      (await this.listBooks()).push(book);
+      this.mirror('books', this.cache.books);
+      return book;
+    } catch (e) { this.fail(e); return null; }
+  }
+  async updateBook(id, patch) {
+    const row = {};
+    if ('title' in patch) row.title = patch.title;
+    if ('author' in patch) row.author = patch.author;
+    if ('totalPages' in patch) row.total_pages = patch.totalPages;
+    if ('currentPage' in patch) row.current_page = patch.currentPage;
+    try {
+      const { error } = await this.sb.from('books').update(row).eq('id', id);
+      if (error) throw error;
+      const book = (await this.listBooks()).find(b => b.id === id);
+      if (book) Object.assign(book, patch);
+      this.mirror('books', this.cache.books);
+      return book || null;
+    } catch (e) { this.fail(e); return null; }
+  }
+  async deleteBook(id) {
+    try {
+      const { error } = await this.sb.from('books').delete().eq('id', id);
+      if (error) throw error;
+      if (this.cache.books) { this.cache.books = this.cache.books.filter(b => b.id !== id); this.mirror('books', this.cache.books); }
+      if (this.cache.bookEntries) { this.cache.bookEntries = this.cache.bookEntries.filter(e => e.bookId !== id); this.mirror('bookEntries', this.cache.bookEntries); }
+    } catch (e) { this.fail(e); }
+  }
+
+  async listBookEntries() {
+    if (!this.cache.bookEntries) {
+      try {
+        const { data, error } = await this.sb.from('book_entries')
+          .select('id,book_id,kind,text,page,created_at').order('created_at', { ascending: false });
+        if (error) throw error;
+        this.cache.bookEntries = data.map(r => ({
+          id: r.id, bookId: r.book_id, kind: r.kind, text: r.text, page: r.page,
+          createdAt: Date.parse(r.created_at),
+        }));
+        this.mirror('bookEntries', this.cache.bookEntries);
+      } catch (e) { this.fail(e); return this.cache.bookEntries || []; }
+    }
+    return this.cache.bookEntries;
+  }
+  async addBookEntry({ bookId, kind, text, page = null }) {
+    try {
+      const { data, error } = await this.sb.from('book_entries')
+        .insert({ book_id: bookId, kind, text, page }).select().single();
+      if (error) throw error;
+      const entry = { id: data.id, bookId: data.book_id, kind: data.kind, text: data.text, page: data.page, createdAt: Date.parse(data.created_at) };
+      (await this.listBookEntries()).unshift(entry);
+      this.mirror('bookEntries', this.cache.bookEntries);
+      return entry;
+    } catch (e) { this.fail(e); return null; }
+  }
+  async deleteBookEntry(id) {
+    try {
+      const { error } = await this.sb.from('book_entries').delete().eq('id', id);
+      if (error) throw error;
+      if (this.cache.bookEntries) { this.cache.bookEntries = this.cache.bookEntries.filter(e => e.id !== id); this.mirror('bookEntries', this.cache.bookEntries); }
+    } catch (e) { this.fail(e); }
+  }
+
   // ── helpers used by the one-time migration ──
   async isEmpty() {
-    for (const table of ['habits', 'reflections', 'items']) {
+    for (const table of ['habits', 'reflections', 'items', 'books', 'book_entries']) {
       const { data, error } = await this.sb.from(table).select('id').limit(1);
       if (error) throw error;
       if (data.length) return false;
@@ -388,6 +520,23 @@ async function migrate(remote) {
       ...(UUID_RE.test(it.id) ? { id: it.id } : {}),
       kind: it.kind, text: it.text, done: it.done,
       created_at: new Date(it.createdAt || Date.now()).toISOString(),
+    })));
+  const [books, bookEntries] = await Promise.all([
+    localAdapter.listBooks(), localAdapter.listBookEntries(),
+  ]);
+  const bookIdMap = {};
+  for (const b of books) {
+    const row = { title: b.title, author: b.author || '', total_pages: b.totalPages, current_page: b.currentPage || 0 };
+    if (UUID_RE.test(b.id)) row.id = b.id;
+    const { data, error } = await remote.sb.from('books').insert(row).select().single();
+    if (error) throw error;
+    bookIdMap[b.id] = data.id;
+  }
+  await remote.bulkInsert('book_entries',
+    bookEntries.filter(e => bookIdMap[e.bookId]).map(e => ({
+      ...(UUID_RE.test(e.id) ? { id: e.id } : {}),
+      book_id: bookIdMap[e.bookId], kind: e.kind, text: e.text, page: e.page,
+      created_at: new Date(e.createdAt || Date.now()).toISOString(),
     })));
   remote.cache = {}; // refetch fresh state after upload
 }
@@ -473,4 +622,11 @@ export const store = {
   toggleItem: (...a) => adapter.toggleItem(...a),
   deleteItem: (...a) => adapter.deleteItem(...a),
   clearDoneItems: (...a) => adapter.clearDoneItems(...a),
+  listBooks: (...a) => adapter.listBooks(...a),
+  addBook: (...a) => adapter.addBook(...a),
+  updateBook: (...a) => adapter.updateBook(...a),
+  deleteBook: (...a) => adapter.deleteBook(...a),
+  listBookEntries: (...a) => adapter.listBookEntries(...a),
+  addBookEntry: (...a) => adapter.addBookEntry(...a),
+  deleteBookEntry: (...a) => adapter.deleteBookEntry(...a),
 };

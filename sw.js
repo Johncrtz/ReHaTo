@@ -1,9 +1,10 @@
 // ReHaTo service worker — offline cache (network-first) + notification host.
-const CACHE = 'rehato-v0.2.1';
+const CACHE = 'rehato-v0.3.0';
 const PRECACHE = [
   './', './index.html', './css/styles.css', './manifest.webmanifest', './icons/icon.svg',
   './js/main.js', './js/config.js', './js/i18n.js', './js/store.js', './js/ui.js',
   './js/calendar.js', './js/habits.js', './js/todos.js', './js/reminders.js',
+  './js/books.js', './js/quotes.js',
 ];
 
 self.addEventListener('install', event => {

@@ -122,7 +122,7 @@ async function run() {
   } catch (e) { s2.fail(e.message || String(e), anonHint); return done(false); }
 
   // 3 — tables exist
-  const tables = [['habits', 'id'], ['reflections', 'id'], ['habit_logs', 'habit_id'], ['items', 'id']];
+  const tables = [['habits', 'id'], ['reflections', 'id'], ['habit_logs', 'habit_id'], ['items', 'id'], ['books', 'id'], ['book_entries', 'id']];
   let tablesOk = true;
   for (const [table, col] of tables) {
     const st = step(`Table “${table}”`);
@@ -155,15 +155,25 @@ async function run() {
     const { error: e5 } = await sb.from('items').update({ done: true }).eq('id', item.id);
     if (e5) throw e5;
 
+    const { data: book, error: e7 } = await sb.from('books')
+      .insert({ title: '🧪 SyncTest-Buch', total_pages: 100 }).select().single();
+    if (e7) throw e7;
+    const { error: e8 } = await sb.from('books').update({ current_page: 50 }).eq('id', book.id);
+    if (e8) throw e8;
+    const { error: e9 } = await sb.from('book_entries')
+      .insert({ book_id: book.id, kind: 'quote', text: '🧪 synctest', page: 1 });
+    if (e9) throw e9;
+
     // read back
     const { data: check, error: e6 } = await sb.from('habits').select('id').eq('id', habit.id);
     if (e6) throw e6;
     if (!check.length) throw new Error('read-back failed: inserted habit not visible (RLS problem?)');
 
-    // clean up (habit delete cascades its log)
+    // clean up (habit delete cascades its log, book delete cascades its entry)
     await sb.from('items').delete().eq('id', item.id);
     await sb.from('reflections').delete().eq('date', '1999-01-01');
     await sb.from('habits').delete().eq('id', habit.id);
+    await sb.from('books').delete().eq('id', book.id);
 
     s4.ok('insert, update, read-back and delete all succeeded');
   } catch (e) {

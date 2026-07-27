@@ -103,13 +103,19 @@ a:hover { text-decoration: underline; }
 /* ── tabs ───────────────────────────────────────────────── */
 .tabs {
   display: flex;
-  gap: 26px;
+  gap: 24px;
   max-width: 720px;
   margin: 14px auto 0;
   padding: 0 20px;
   border-bottom: 1px solid var(--line);
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
 }
+.tabs::-webkit-scrollbar { display: none; }
 .tab {
+  flex: none;
+  white-space: nowrap;
   padding: 9px 2px 11px;
   color: var(--muted);
   font-weight: 500;
@@ -483,6 +489,88 @@ a:hover { text-decoration: underline; }
   font-size: .76rem;
   margin-top: 2px;
 }
+
+/* ── books & quotes ─────────────────────────────────────── */
+.num-input {
+  width: 86px;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 9px 10px;
+}
+.num-input:focus { outline: none; border-color: var(--accent); }
+.num-small { width: 74px; }
+.book-form .form-row + .form-row { margin-top: 10px; }
+.book-list { display: flex; flex-direction: column; }
+.book-row {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  width: 100%;
+  text-align: left;
+  padding: 14px 2px;
+  border-radius: 8px;
+  transition: background .12s;
+}
+.book-row + .book-row { border-top: 1px solid var(--line); }
+.book-row:hover { background: var(--accent-soft); }
+.book-line { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.book-title { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.book-author { color: var(--muted); font-size: .86rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.book-pct { margin-left: auto; flex: none; color: var(--accent); font-size: .82rem; font-weight: 600; }
+.book-progress {
+  height: 3px;
+  background: var(--line);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.book-progress-fill { height: 100%; background: var(--accent); border-radius: 999px; transition: width .3s ease; }
+.book-meta { color: var(--muted); font-size: .78rem; }
+.back-btn { margin: -6px 0 12px -8px; }
+.detail-head { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 16px; }
+.detail-title { flex: 1; min-width: 0; }
+.detail-title h2 { margin: 0; font-size: 1.2rem; letter-spacing: -.01em; }
+.progress-edit {
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.progress-edit label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--muted);
+  font-size: .78rem;
+}
+.book-pct-big { color: var(--accent); font-weight: 700; font-size: 1.05rem; margin-left: auto; }
+.quote-card {
+  border-left: 2px solid var(--accent);
+  padding: 2px 0 2px 14px;
+  margin: 0 0 16px;
+}
+.quote-card:last-child { margin-bottom: 0; }
+.quote-card blockquote { margin: 0; font-style: italic; }
+.quote-card figcaption {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--muted);
+  font-size: .76rem;
+  margin-top: 2px;
+}
+.entry-meta { flex: none; color: var(--muted); font-size: .76rem; }
+.quote-wall { display: flex; flex-direction: column; gap: 26px; }
+.quote-big { margin: 0; }
+.quote-big blockquote {
+  margin: 0;
+  font-style: italic;
+  font-size: 1.08rem;
+  line-height: 1.65;
+}
+.quote-big figcaption { color: var(--muted); font-size: .84rem; margin-top: 6px; }
+.quote-big .quote-author { font-weight: 500; }
 
 /* ── toast & footer ─────────────────────────────────────── */
 .toast {

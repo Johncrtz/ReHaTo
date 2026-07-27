@@ -40,7 +40,10 @@ credentials live in [`js/config.js`](../js/config.js).
 ### One-time dashboard setup (required before sync works)
 
 1. Open the SQL editor of the project, paste and run
-   [`schema.sql`](./schema.sql) — creates the four tables + RLS.
+   [`schema.sql`](./schema.sql) — creates the six tables + RLS.
+   The file is **idempotent**: after app updates that add tables
+   (e.g. v0.3 added `books` and `book_entries`), simply re-run the
+   whole file — existing tables and data are untouched.
 2. In **Authentication → Sign In / Up → Auth Providers**, enable
    **Anonymous sign-ins**.
 

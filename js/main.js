@@ -6,9 +6,11 @@ import { showToast } from './ui.js';
 import * as calendar from './calendar.js';
 import * as habits from './habits.js';
 import * as todos from './todos.js';
+import * as books from './books.js';
+import * as quotes from './quotes.js';
 import * as reminders from './reminders.js';
 
-const views = { calendar, habits, todos };
+const views = { calendar, habits, todos, books, quotes };
 let active = 'calendar';
 
 function viewFromHash() {
@@ -92,6 +94,8 @@ async function boot() {
   calendar.init(document.getElementById('view-calendar'));
   habits.init(document.getElementById('view-habits'));
   todos.init(document.getElementById('view-todos'));
+  books.init(document.getElementById('view-books'));
+  quotes.init(document.getElementById('view-quotes'));
 
   addEventListener('hashchange', () => switchView(viewFromHash()));
   await switchView(viewFromHash());
