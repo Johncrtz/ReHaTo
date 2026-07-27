@@ -23,33 +23,32 @@ Why Supabase: hosted Postgres + auth + auto REST API with a generous free
 tier, and **anonymous auth** fits ReHaTo's privacy-first approach — users
 get per-account data without handing over personal information.
 
-## Current state (Phase 1)
+## Current state (Phase 2 — client implemented ✅)
 
-All data lives in `localStorage` in the user's browser. The entire app
-talks to one interface — `store` in [`js/store.js`](../js/store.js) — so
-swapping the storage backend never touches view code.
+The app starts local-only (`localStorage`). Sync is **opt-in**: the
+cloud button in the header signs the user in **anonymously** (no name,
+no email), uploads their existing local data once, and from then on
+reads/writes Supabase rows. Turning sync off snapshots the cloud state
+back into `localStorage`; the anonymous session is kept so re-enabling
+finds the same account.
 
-## Phase 2: connect Supabase
+Everything flows through the `store` facade in
+[`js/store.js`](../js/store.js) (`LocalAdapter` / `SupabaseAdapter`);
+credentials live in [`js/config.js`](../js/config.js).
+`@supabase/supabase-js` is loaded on demand from a CDN — no build step.
 
-1. Create a project at [supabase.com](https://supabase.com) (free tier).
-2. Open the SQL editor, paste and run [`schema.sql`](./schema.sql).
-3. In **Authentication → Sign In / Up**, enable **Anonymous sign-ins**.
-4. Copy the project's **URL** and **anon public key**
-   (Settings → API) into [`js/config.js`](../js/config.js):
-   ```js
-   export const CONFIG = {
-     backend: 'supabase',
-     supabaseUrl: 'https://xyz.supabase.co',
-     supabaseAnonKey: 'eyJ...',
-   };
-   ```
-5. Implement `SupabaseAdapter` in `js/store.js` with the same method
-   signatures as `LocalAdapter` (the interface is documented at the top
-   of that file). Include a one-time migration that uploads existing
-   localStorage data on first sign-in.
+### One-time dashboard setup (required before sync works)
 
-Note: the anon key is *meant* to be public — security comes from Row
-Level Security in the database, not from hiding the key.
+1. Open the SQL editor of the project, paste and run
+   [`schema.sql`](./schema.sql) — creates the four tables + RLS.
+2. In **Authentication → Sign In / Up → Auth Providers**, enable
+   **Anonymous sign-ins**.
+
+Until both are done, enabling sync in the app shows a sync error and
+the app keeps working locally.
+
+Note: the publishable key is *meant* to be public — security comes from
+Row Level Security in the database, not from hiding the key.
 
 ## Phase 3: real push reminders
 

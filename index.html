@@ -32,6 +32,7 @@
       </div>
     </div>
     <div class="header-actions">
+      <button id="sync-toggle" class="chip hidden" data-i18n-title="sync.label" aria-pressed="false">☁️</button>
       <button id="lang-toggle" class="chip" data-i18n-title="lang.label">EN</button>
       <button id="theme-toggle" class="chip" data-i18n-title="theme.label">🌙</button>
     </div>
@@ -74,7 +75,7 @@
   <div id="toast" class="toast" role="status"></div>
 
   <footer class="app-footer">
-    <span data-i18n="footer.local"></span>
+    <span id="footer-status"></span>
     <span>·</span>
     <span id="version"></span>
     <span>·</span>

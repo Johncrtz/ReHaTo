@@ -15,14 +15,18 @@ reflecting on your day, building habits, and keeping track of your thoughts.
   still open — or congratulates you when everything's done.
 - 📝 **Notes & to-dos** — quick capture for tasks (checkable) and free
   thoughts.
+- ☁️ **Opt-in anonymous cloud sync** (Supabase) — off by default; one tap
+  creates an anonymous account (no name/email) and keeps data synced.
 - 🌗 Dark/light mode · 🇩🇪/🇬🇧 language toggle · 📲 installable as a PWA ·
   works offline.
 
 ## Privacy
 
-Phase 1 stores **everything in your browser** (`localStorage`) — nothing
-leaves your device. Phase 2 adds optional sync via Supabase with anonymous
-accounts; see [`backend/README.md`](backend/README.md).
+By default **everything stays in your browser** (`localStorage`) — nothing
+leaves your device. The cloud button in the header enables optional sync
+via Supabase with an **anonymous account** (no name, no email); Row Level
+Security keeps every user's rows private. Setup steps and details:
+[`backend/README.md`](backend/README.md).
 
 ## Development
 
@@ -70,6 +74,7 @@ backend/                Supabase schema + connection guide (not live yet)
 ## Roadmap
 
 - [x] **Phase 1** — frontend on GitHub Pages, data in localStorage
-- [ ] **Phase 2** — Supabase: anonymous auth + sync (schema ready in `backend/`)
+- [x] **Phase 2** — Supabase: opt-in anonymous auth + sync
+      (requires one-time dashboard setup, see `backend/README.md`)
 - [ ] **Phase 3** — real push reminders via Edge Functions + Web Push
 - [ ] **Phase 4** — custom domain · favorite book quotes collection

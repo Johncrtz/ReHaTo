@@ -1,11 +1,12 @@
 // ReHaTo configuration
 // ─────────────────────────────────────────────────────────────
-// Phase 1 (now):   backend: 'local'  → everything in localStorage
-// Phase 2 (later): backend: 'supabase' → fill in URL + anon key,
-//                  see backend/README.md for setup steps.
+// The publishable key is safe to ship in client code by design —
+// data protection comes from Row Level Security in the database
+// (see backend/schema.sql), not from hiding this key.
+// Sync is OPT-IN: the app stays local-only until the user enables
+// it via the cloud toggle in the header.
 export const CONFIG = {
-  backend: 'local', // 'local' | 'supabase'
-  supabaseUrl: '',
-  supabaseAnonKey: '',
-  version: '0.1.0',
+  supabaseUrl: 'https://epfdjgnizfszhuenjzkw.supabase.co',
+  supabaseAnonKey: 'sb_publishable_K7R-oQSjUtJKSB3TCPvtWA_Cvfi1PDZ',
+  version: '0.2.0',
 };
