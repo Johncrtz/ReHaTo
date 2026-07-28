@@ -18,6 +18,7 @@ export async function render() {
       <h3 class="card-title">🔒 ${t('info.dataTitle')}</h3>
       <p class="info-p">${t('info.dataBody1')}</p>
       <p class="info-p">${t('info.dataBody2')}</p>
+      <p class="info-p">${t('info.dataBody3')}</p>
     </div>
     <div class="card">
       <h3 class="card-title">§ ${t('info.legalTitle')}</h3>

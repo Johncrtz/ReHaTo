@@ -149,6 +149,12 @@ const dict = {
     'info.legalTitle': 'Impressum',
     'info.legalNote': 'Platzhalter – bitte vor öffentlicher Nutzung mit echten Angaben füllen:',
     'acct.signInShort': 'Anmelden / Konto erstellen',
+    'book.coverRemove': 'Cover entfernen',
+    'book.viewShelf': 'Regalansicht',
+    'book.viewList': 'Listenansicht',
+    'book.count': '{n} Buch/Bücher',
+    'book.shelfEmpty': 'Dein Regal ist noch leer. Füge dein erstes Buch hinzu – es stellt sich dann hier auf. 📚',
+    'info.dataBody3': 'Die Buchsuche fragt openlibrary.org an (nur der eingegebene Suchtext); Cover-Bilder werden von dort geladen.',
   },
   en: {
     'app.tagline': 'Reflect · Habits · To-dos',
@@ -299,6 +305,12 @@ const dict = {
     'info.legalTitle': 'Legal notice (Impressum)',
     'info.legalNote': 'Placeholder – fill in real details before public use:',
     'acct.signInShort': 'Sign in / create account',
+    'book.coverRemove': 'Remove cover',
+    'book.viewShelf': 'Shelf view',
+    'book.viewList': 'List view',
+    'book.count': '{n} book(s)',
+    'book.shelfEmpty': 'Your shelf is still empty. Add your first book – it will appear right here. 📚',
+    'info.dataBody3': 'Book search queries openlibrary.org (only the typed search text); cover images are loaded from there.',
   },
 };
 

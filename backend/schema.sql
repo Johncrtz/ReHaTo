@@ -54,8 +54,11 @@ create table if not exists public.books (
   author       text not null default '',
   total_pages  integer check (total_pages > 0),
   current_page integer not null default 0 check (current_page >= 0),
+  cover_url    text,
   created_at   timestamptz not null default now()
 );
+-- v0.7: cover images — safe to re-run on databases created before this column
+alter table public.books add column if not exists cover_url text;
 
 -- Book entries: quotes & notes captured per book (kind = 'quote' | 'note')
 create table if not exists public.book_entries (

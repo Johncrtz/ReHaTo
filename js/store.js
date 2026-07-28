@@ -119,8 +119,8 @@ class LocalAdapter {
   }
 
   async listBooks() { return this.read('books', []); }
-  async addBook({ title, author = '', totalPages = null }) {
-    const book = { id: uid(), title, author, totalPages, currentPage: 0, createdAt: Date.now() };
+  async addBook({ title, author = '', totalPages = null, coverUrl = null }) {
+    const book = { id: uid(), title, author, totalPages, coverUrl, currentPage: 0, createdAt: Date.now() };
     const books = await this.listBooks();
     books.push(book);
     this.write('books', books);
@@ -185,8 +185,11 @@ function makeDemoSeed() {
     { id: 't5', text: '„Wir sind, was wir wiederholt tun.“ – schönes Zitat für die Startseite?', kind: 'thought', done: false, createdAt: Date.now() },
   ];
   const books = [
-    { id: 'b1', title: 'Der Alchimist', author: 'Paulo Coelho', totalPages: 208, currentPage: 132, createdAt: Date.now() },
-    { id: 'b2', title: 'Atomic Habits', author: 'James Clear', totalPages: 320, currentPage: 320, createdAt: Date.now() },
+    { id: 'b1', title: 'Der Alchimist', author: 'Paulo Coelho', totalPages: 208, currentPage: 132,
+      coverUrl: 'https://covers.openlibrary.org/b/isbn/9783257237276-M.jpg', createdAt: Date.now() },
+    { id: 'b2', title: 'Atomic Habits', author: 'James Clear', totalPages: 320, currentPage: 320,
+      coverUrl: 'https://covers.openlibrary.org/b/isbn/9780735211292-M.jpg', createdAt: Date.now() },
+    { id: 'b3', title: 'Steppenwolf', author: 'Hermann Hesse', totalPages: 288, currentPage: 40, coverUrl: null, createdAt: Date.now() },
   ];
   const bookEntries = [
     { id: 'q1', bookId: 'b1', kind: 'quote', text: 'Wenn du etwas ganz fest willst, dann wird das ganze Universum dazu beitragen, dass du es auch erreichst.', page: 40, createdAt: Date.now() - 86400000 },
@@ -368,27 +371,27 @@ class SupabaseAdapter {
     if (!this.cache.books) {
       try {
         const { data, error } = await this.sb.from('books')
-          .select('id,title,author,total_pages,current_page,created_at').order('created_at');
+          .select('id,title,author,total_pages,current_page,cover_url,created_at').order('created_at');
         if (error) throw error;
         this.cache.books = data.map(r => ({
           id: r.id, title: r.title, author: r.author || '',
           totalPages: r.total_pages, currentPage: r.current_page,
-          createdAt: Date.parse(r.created_at),
+          coverUrl: r.cover_url, createdAt: Date.parse(r.created_at),
         }));
         this.mirror('books', this.cache.books);
       } catch (e) { this.fail(e); return this.cache.books || []; }
     }
     return this.cache.books;
   }
-  async addBook({ title, author = '', totalPages = null }) {
+  async addBook({ title, author = '', totalPages = null, coverUrl = null }) {
     try {
       const { data, error } = await this.sb.from('books')
-        .insert({ title, author, total_pages: totalPages }).select().single();
+        .insert({ title, author, total_pages: totalPages, cover_url: coverUrl }).select().single();
       if (error) throw error;
       const book = {
         id: data.id, title: data.title, author: data.author || '',
         totalPages: data.total_pages, currentPage: data.current_page,
-        createdAt: Date.parse(data.created_at),
+        coverUrl: data.cover_url, createdAt: Date.parse(data.created_at),
       };
       (await this.listBooks()).push(book);
       this.mirror('books', this.cache.books);
@@ -401,6 +404,7 @@ class SupabaseAdapter {
     if ('author' in patch) row.author = patch.author;
     if ('totalPages' in patch) row.total_pages = patch.totalPages;
     if ('currentPage' in patch) row.current_page = patch.currentPage;
+    if ('coverUrl' in patch) row.cover_url = patch.coverUrl;
     try {
       const { error } = await this.sb.from('books').update(row).eq('id', id);
       if (error) throw error;
@@ -538,7 +542,7 @@ async function migrate(remote) {
   ]);
   const bookIdMap = {};
   for (const b of books) {
-    const row = { title: b.title, author: b.author || '', total_pages: b.totalPages, current_page: b.currentPage || 0 };
+    const row = { title: b.title, author: b.author || '', total_pages: b.totalPages, current_page: b.currentPage || 0, cover_url: b.coverUrl || null };
     if (UUID_RE.test(b.id)) row.id = b.id;
     const { data, error } = await remote.sb.from('books').insert(row).select().single();
     if (error) throw error;
