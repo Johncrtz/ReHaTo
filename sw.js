@@ -1,5 +1,5 @@
 // ReHaTo service worker — offline cache (network-first) + notification host.
-const CACHE = 'rehato-v0.5.0';
+const CACHE = 'rehato-v0.5.1';
 const PRECACHE = [
   './', './index.html', './css/styles.css', './manifest.webmanifest', './icons/icon.svg',
   './js/main.js', './js/config.js', './js/i18n.js', './js/store.js', './js/ui.js',
@@ -22,13 +22,16 @@ self.addEventListener('activate', event => {
 // Network-first: always try fresh (so feedback iterations show up),
 // fall back to cache when offline. The supabase-js CDN module is cached
 // too, so cloud mode can still boot without a network connection.
+// Same-origin requests bypass the HTTP cache (cache: 'no-cache' forces an
+// ETag revalidation) so new deploys appear on the next normal reload
+// instead of after GitHub Pages' 10-minute cache window.
 self.addEventListener('fetch', event => {
   const { request } = event;
-  const cacheable = request.url.startsWith(self.location.origin)
-    || request.url.startsWith('https://cdn.jsdelivr.net/');
+  const sameOrigin = request.url.startsWith(self.location.origin);
+  const cacheable = sameOrigin || request.url.startsWith('https://cdn.jsdelivr.net/');
   if (request.method !== 'GET' || !cacheable) return;
   event.respondWith(
-    fetch(request)
+    (sameOrigin ? fetch(request.url, { cache: 'no-cache' }) : fetch(request))
       .then(response => {
         const copy = response.clone();
         caches.open(CACHE).then(c => c.put(request, copy));
