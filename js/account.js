@@ -141,6 +141,7 @@ function renderButton(state) {
   const badge = btn.querySelector('.acct-btn-badge');
   const ico = btn.querySelector('.acct-btn-ico');
   const avatar = btn.querySelector('.acct-btn-avatar');
+  const label = btn.querySelector('#sb-account-label');
   avatar.classList.add('hidden');
   ico.classList.remove('hidden');
   badge.classList.add('hidden');
@@ -149,11 +150,14 @@ function renderButton(state) {
     ico.classList.add('hidden');
     avatar.classList.remove('hidden');
     avatar.textContent = ((state.name || state.email || '?')[0]).toUpperCase();
+    label.textContent = state.name || state.email;
   } else if (state.kind === 'pending') {
     ico.innerHTML = ICO.mail;
     badge.classList.remove('hidden');
+    label.textContent = state.email;
   } else {
     ico.innerHTML = ICO.person;
+    label.textContent = t('acct.signInShort');
   }
   btn.title = t('acct.label');
   btn.setAttribute('aria-label', t('acct.label'));
@@ -301,7 +305,7 @@ function close() {
 }
 
 export function init() {
-  btn = document.getElementById('account-btn');
+  btn = document.getElementById('sb-account');
   modal = document.getElementById('account-modal');
   if (isDemo || !sync.available) { btn.classList.add('hidden'); renderFooter({ kind: 'local' }); return; }
 

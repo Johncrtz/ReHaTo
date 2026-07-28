@@ -6,12 +6,15 @@ import { showToast } from './ui.js';
 import * as calendar from './calendar.js';
 import * as habits from './habits.js';
 import * as todos from './todos.js';
+import * as thoughts from './thoughts.js';
 import * as books from './books.js';
 import * as quotes from './quotes.js';
+import * as info from './info.js';
 import * as reminders from './reminders.js';
 import * as account from './account.js';
+import * as sidebar from './sidebar.js';
 
-const views = { calendar, habits, todos, books, quotes };
+const views = { calendar, habits, todos, thoughts, books, quotes, info };
 let active = 'calendar';
 
 function viewFromHash() {
@@ -21,10 +24,10 @@ function viewFromHash() {
 
 async function switchView(name) {
   active = name;
-  document.querySelectorAll('.tab').forEach(tab => {
-    const on = tab.dataset.view === name;
-    tab.classList.toggle('active', on);
-    tab.setAttribute('aria-current', on ? 'page' : 'false');
+  document.querySelectorAll('.nav-item[data-view]').forEach(item => {
+    const on = item.dataset.view === name;
+    item.classList.toggle('active', on);
+    item.setAttribute('aria-current', on ? 'page' : 'false');
   });
   document.querySelectorAll('.view').forEach(sec => {
     sec.classList.toggle('hidden', sec.id !== `view-${name}`);
@@ -68,8 +71,11 @@ async function boot() {
   calendar.init(document.getElementById('view-calendar'));
   habits.init(document.getElementById('view-habits'));
   todos.init(document.getElementById('view-todos'));
+  thoughts.init(document.getElementById('view-thoughts'));
   books.init(document.getElementById('view-books'));
   quotes.init(document.getElementById('view-quotes'));
+  info.init(document.getElementById('view-info'));
+  await sidebar.init();
 
   addEventListener('hashchange', () => switchView(viewFromHash()));
   await switchView(viewFromHash());
