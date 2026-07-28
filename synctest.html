@@ -37,6 +37,12 @@
   <p class="sub">Tests the full chain browser → Supabase: sign-in, tables, and a real write/read/delete round-trip. Safe to run anytime — it only touches its own test rows.</p>
   <div id="steps"></div>
   <div id="verdict"></div>
+  <div class="hint" style="margin-top:18px">
+    <b>Not auto-checkable, but required for account emails:</b> in
+    <a id="url-config-link" href="#" target="_blank" rel="noopener">Authentication → URL Configuration</a>,
+    Site URL must be <code id="site-url"></code> — otherwise confirmation and
+    magic-link emails redirect to localhost and go nowhere.
+  </div>
   <p class="foot"><a href="./">← back to ReHaTo</a> · The anonymous test account is reused by the app when you enable sync, so nothing is orphaned.</p>
 </main>
 
@@ -46,6 +52,9 @@ import { CONFIG } from './js/config.js';
 const REF = new URL(CONFIG.supabaseUrl).hostname.split('.')[0];
 const SQL_URL = `https://supabase.com/dashboard/project/${REF}/sql/new`;
 const AUTH_URL = `https://supabase.com/dashboard/project/${REF}/auth/providers`;
+
+document.getElementById('url-config-link').href = `https://supabase.com/dashboard/project/${REF}/auth/url-configuration`;
+document.getElementById('site-url').textContent = location.origin + location.pathname.replace(/synctest\.html$/, '');
 
 const stepsEl = document.getElementById('steps');
 function step(name) {

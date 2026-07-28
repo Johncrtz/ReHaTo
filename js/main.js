@@ -9,6 +9,7 @@ import * as todos from './todos.js';
 import * as books from './books.js';
 import * as quotes from './quotes.js';
 import * as reminders from './reminders.js';
+import * as account from './account.js';
 
 const views = { calendar, habits, todos, books, quotes };
 let active = 'calendar';
@@ -43,35 +44,6 @@ function applyTheme(theme) {
   document.getElementById('theme-toggle').textContent = resolvedTheme() === 'dark' ? '☀️' : '🌙';
 }
 
-function renderSyncUi() {
-  const btn = document.getElementById('sync-toggle');
-  const on = sync.status === 'on';
-  btn.classList.toggle('hidden', !sync.available);
-  btn.classList.toggle('sync-on', on);
-  btn.classList.toggle('sync-busy', sync.status === 'connecting');
-  btn.setAttribute('aria-pressed', String(on));
-  btn.title = i18n.t(on ? 'sync.on' : 'sync.off');
-  btn.setAttribute('aria-label', btn.title);
-  document.getElementById('footer-status').textContent =
-    i18n.t(on ? 'footer.synced' : 'footer.local');
-}
-
-async function toggleSync() {
-  if (sync.status === 'connecting') return;
-  if (sync.status === 'on') {
-    if (!confirm(i18n.t('sync.confirmDisable'))) return;
-    await sync.disable();
-    showToast(i18n.t('sync.disabledToast'));
-  } else {
-    if (!confirm(i18n.t('sync.confirmEnable'))) return;
-    renderSyncUi();
-    const ok = await sync.enable();
-    showToast(i18n.t(ok ? 'sync.enabledToast' : 'sync.error'));
-  }
-  renderSyncUi();
-  await views[active].render();
-}
-
 async function boot() {
   const settings = await store.getSettings();
 
@@ -85,10 +57,12 @@ async function boot() {
 
   if (isDemo) document.getElementById('demo-banner').classList.remove('hidden');
 
-  // Reconnect cloud sync if the user had it on (before first render).
+  // Reconnect cloud sync if the user had it on (before first render) —
+  // this also consumes magic-link/confirmation tokens from email links.
   await sync.init();
   if (sync.status === 'error') showToast(i18n.t('sync.error'));
-  renderSyncUi();
+  account.init();
+  window.addEventListener('rehato:refresh-view', () => views[active].render());
 
   // Views
   calendar.init(document.getElementById('view-calendar'));
@@ -107,15 +81,13 @@ async function boot() {
   }
 
   // Header controls
-  document.getElementById('sync-toggle').addEventListener('click', toggleSync);
-
   document.getElementById('lang-toggle').addEventListener('click', async () => {
     const next = i18n.getLang() === 'de' ? 'en' : 'de';
     await store.patchSettings({ lang: next });
     i18n.setLang(next);
     i18n.applyStatic();
     document.getElementById('lang-toggle').textContent = next === 'de' ? 'EN' : 'DE';
-    renderSyncUi();
+    account.refresh();
     await views[active].render();
   });
 

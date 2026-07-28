@@ -47,7 +47,7 @@ class LocalAdapter {
     return {
       theme: 'auto', lang: null,
       remindersEnabled: false, reminderTime: '20:00', lastReminderDate: null,
-      syncEnabled: false,
+      syncEnabled: false, pendingEmail: null,
       ...this.read('settings', {}),
     };
   }
@@ -477,10 +477,30 @@ const localAdapter = new LocalAdapter();
 let adapter = isDemo ? new MemoryAdapter(makeDemoSeed()) : localAdapter;
 let client = null;
 
+// Where magic links / confirmation emails land — must be allow-listed in
+// Supabase (Authentication → URL Configuration), see backend/README.md.
+function appUrl() {
+  return location.origin + location.pathname.replace(/index\.html$/, '');
+}
+
+// True when the page was opened via a Supabase email link (magic link,
+// email-change confirmation) — tokens arrive in the URL hash.
+function hasAuthTokensInUrl() {
+  return /access_token=|refresh_token=|type=magiclink|type=email_change|type=signup/.test(location.hash)
+    || new URLSearchParams(location.search).has('code');
+}
+function hasAuthErrorInUrl() {
+  return /error=|error_code=/.test(location.hash);
+}
+
+const changeListeners = new Set();
+function notifyChange() { changeListeners.forEach(cb => { try { cb(); } catch { /* listener error */ } }); }
+
 async function getClient() {
   if (client) return client;
   const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
   client = createClient(CONFIG.supabaseUrl, CONFIG.supabaseAnonKey);
+  client.auth.onAuthStateChange(() => notifyChange());
   return client;
 }
 
@@ -545,22 +565,100 @@ export const sync = {
   available: !isDemo && !!(CONFIG.supabaseUrl && CONFIG.supabaseAnonKey),
   status: 'off', // 'off' | 'connecting' | 'on' | 'error'
 
-  // Reconnect on boot if the user had sync enabled.
+  // Reconnect on boot if the user had sync enabled — and always when the
+  // page was opened via an email link (magic link / confirmation), so the
+  // session in the URL gets consumed even on a fresh device.
   async init() {
     if (!this.available) return;
-    const s = await localAdapter.getSettings();
-    if (!s.syncEnabled) return;
+    const settings = await localAdapter.getSettings();
+    const fromEmailLink = hasAuthTokensInUrl();
+    this.linkErrored = hasAuthErrorInUrl();
+    if (!settings.syncEnabled && !fromEmailLink) return;
     try {
       this.status = 'connecting';
       const sb = await getClient();
-      await signIn(sb);
-      adapter = new SupabaseAdapter(sb, localAdapter);
+      let { data: { session } } = await sb.auth.getSession();
+      if (!session && fromEmailLink) {
+        // give detectSessionInUrl a moment to consume the hash tokens
+        await new Promise(r => setTimeout(r, 400));
+        ({ data: { session } } = await sb.auth.getSession());
+      }
+      if (!session) {
+        if (!settings.syncEnabled) { this.status = 'off'; return; }
+        session = await signIn(sb);
+      }
+      const remote = new SupabaseAdapter(sb, localAdapter);
+      if (!settings.syncEnabled) {
+        // arrived signed-in via email link on a device without sync on:
+        // upload any local-only data (only into an empty cloud), then stay on
+        try { await migrate(remote); } catch (e) { console.error('[ReHaTo] migrate on login failed', e); }
+        await localAdapter.patchSettings({ syncEnabled: true });
+      }
+      adapter = remote;
       this.status = 'on';
     } catch (e) {
       console.error('[ReHaTo] sync init failed — staying local', e);
-      this.status = 'error';
+      this.status = (await localAdapter.getSettings()).syncEnabled ? 'error' : 'off';
       adapter = localAdapter;
     }
+    notifyChange();
+  },
+
+  // ── account lifecycle (see js/account.js for the UI) ──
+  onChange(cb) { changeListeners.add(cb); },
+
+  async accountState() {
+    if (!this.available) return { kind: 'unavailable' };
+    if (!client) return { kind: 'local' };
+    try {
+      const { data: { session } } = await client.auth.getSession();
+      if (!session) return { kind: 'local' };
+      const user = session.user;
+      const settings = await localAdapter.getSettings();
+      if (user.is_anonymous) {
+        const email = user.new_email || settings.pendingEmail || null;
+        return email
+          ? { kind: 'pending', email, userId: user.id }
+          : { kind: 'anonymous', userId: user.id };
+      }
+      if (settings.pendingEmail) await localAdapter.patchSettings({ pendingEmail: null });
+      return { kind: 'secured', email: user.email, userId: user.id };
+    } catch { return { kind: 'local' }; }
+  },
+
+  // Anonymous → secured: attach an email; Supabase sends a confirmation link.
+  async linkEmail(email) {
+    const sb = await getClient();
+    const { error } = await sb.auth.updateUser({ email }, { emailRedirectTo: appUrl() });
+    if (error) throw error;
+    await localAdapter.patchSettings({ pendingEmail: email });
+    notifyChange();
+  },
+
+  // Returning user on any device: passwordless magic-link sign-in.
+  async signInWithEmail(email) {
+    const sb = await getClient();
+    const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: appUrl() } });
+    if (error) throw error;
+  },
+
+  // Re-check whether a pending confirmation went through.
+  async recheck() {
+    const sb = await getClient();
+    try { await sb.auth.refreshSession(); } catch { /* no session yet */ }
+    const state = await this.accountState();
+    if (state.kind === 'secured') notifyChange();
+    return state;
+  },
+
+  // Only offered for secured accounts (anonymous data would be orphaned).
+  async signOut() {
+    const sb = await getClient();
+    await sb.auth.signOut();
+    adapter = localAdapter;
+    this.status = 'off';
+    await localAdapter.patchSettings({ syncEnabled: false, pendingEmail: null });
+    notifyChange();
   },
 
   async enable() {
@@ -573,6 +671,7 @@ export const sync = {
       adapter = remote;
       this.status = 'on';
       await localAdapter.patchSettings({ syncEnabled: true });
+      notifyChange();
       return true;
     } catch (e) {
       console.error('[ReHaTo] sync enable failed', e);
@@ -600,6 +699,7 @@ export const sync = {
     adapter = localAdapter;
     this.status = 'off';
     await localAdapter.patchSettings({ syncEnabled: false });
+    notifyChange();
   },
 };
 

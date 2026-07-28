@@ -45,7 +45,27 @@ credentials live in [`js/config.js`](../js/config.js).
    (e.g. v0.3 added `books` and `book_entries`), simply re-run the
    whole file — existing tables and data are untouched.
 2. In **Authentication → Sign In / Up → Auth Providers**, enable
-   **Anonymous sign-ins**.
+   **Anonymous sign-ins**. Keep **Email** enabled too (it is by
+   default) — it powers account securing and magic-link sign-in.
+3. In **Authentication → URL Configuration**, set **Site URL** to
+   `https://johncrtz.github.io/ReHaTo/` and add
+   `https://johncrtz.github.io/ReHaTo/*` under **Redirect URLs**.
+   Without this, confirmation and magic-link emails redirect to
+   `localhost:3000` (Supabase's default) and go nowhere.
+
+### Account model (v0.4)
+
+- **Local** → no account; data in the browser only.
+- **Anonymous** (☁ enable) → invisible account, browser-bound.
+- **Secured** → user links an email (confirmation link); same
+  user id, all rows kept, `is_anonymous` becomes false. Sign-in on
+  other devices via **magic link** (`signInWithOtp`) — passwordless.
+- Sign-out is only offered for secured accounts so anonymous data
+  can never be orphaned.
+
+Note: Supabase's built-in email service is rate-limited to a few
+messages per hour — fine for personal use. For more, configure
+custom SMTP in **Authentication → Emails → SMTP Settings**.
 
 Until both are done, enabling sync in the app shows a sync error and
 the app keeps working locally.
