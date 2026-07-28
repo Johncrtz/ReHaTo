@@ -157,6 +157,10 @@ const dict = {
     'book.styleWood': 'Holz',
     'book.styleModern': 'Modern',
     'book.styleCozy': 'Verspielt',
+    'nav.readingGroup': 'Lesen',
+    'book.yourRating': 'Deine Bewertung',
+    'book.ratings': '{n} Bewertungen',
+    'book.ratingSource': 'Open Library',
     'info.dataBody3': 'Die Buchsuche fragt openlibrary.org an (nur der eingegebene Suchtext); Cover-Bilder werden von dort geladen.',
   },
   en: {
@@ -316,6 +320,10 @@ const dict = {
     'book.styleWood': 'Wood',
     'book.styleModern': 'Modern',
     'book.styleCozy': 'Playful',
+    'nav.readingGroup': 'Reading',
+    'book.yourRating': 'Your rating',
+    'book.ratings': '{n} ratings',
+    'book.ratingSource': 'Open Library',
     'info.dataBody3': 'Book search queries openlibrary.org (only the typed search text); cover images are loaded from there.',
   },
 };

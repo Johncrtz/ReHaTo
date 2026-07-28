@@ -118,13 +118,22 @@ class LocalAdapter {
     this.write('items', (await this.listItems()).filter(i => !(i.kind === 'todo' && i.done)));
   }
 
-  async listBooks() { return this.read('books', []); }
+  async listBooks() {
+    return this.read('books', []).sort((a, b) =>
+      ((a.position ?? 1e12) - (b.position ?? 1e12)) || (a.createdAt - b.createdAt));
+  }
   async addBook({ title, author = '', totalPages = null, coverUrl = null }) {
-    const book = { id: uid(), title, author, totalPages, coverUrl, currentPage: 0, createdAt: Date.now() };
+    const book = { id: uid(), title, author, totalPages, coverUrl, rating: null, position: null, currentPage: 0, createdAt: Date.now() };
     const books = await this.listBooks();
     books.push(book);
     this.write('books', books);
     return book;
+  }
+  async setBookPositions(orderedIds) {
+    const books = await this.listBooks();
+    const map = new Map(books.map(b => [b.id, b]));
+    orderedIds.forEach((id, i) => { const b = map.get(id); if (b) b.position = i; });
+    this.write('books', books);
   }
   async updateBook(id, patch) {
     const books = await this.listBooks();
@@ -371,12 +380,14 @@ class SupabaseAdapter {
     if (!this.cache.books) {
       try {
         const { data, error } = await this.sb.from('books')
-          .select('id,title,author,total_pages,current_page,cover_url,created_at').order('created_at');
+          .select('id,title,author,total_pages,current_page,cover_url,rating,position,created_at')
+          .order('position', { ascending: true, nullsFirst: false }).order('created_at');
         if (error) throw error;
         this.cache.books = data.map(r => ({
           id: r.id, title: r.title, author: r.author || '',
           totalPages: r.total_pages, currentPage: r.current_page,
-          coverUrl: r.cover_url, createdAt: Date.parse(r.created_at),
+          coverUrl: r.cover_url, rating: r.rating, position: r.position,
+          createdAt: Date.parse(r.created_at),
         }));
         this.mirror('books', this.cache.books);
       } catch (e) { this.fail(e); return this.cache.books || []; }
@@ -391,7 +402,8 @@ class SupabaseAdapter {
       const book = {
         id: data.id, title: data.title, author: data.author || '',
         totalPages: data.total_pages, currentPage: data.current_page,
-        coverUrl: data.cover_url, createdAt: Date.parse(data.created_at),
+        coverUrl: data.cover_url, rating: data.rating, position: data.position,
+        createdAt: Date.parse(data.created_at),
       };
       (await this.listBooks()).push(book);
       this.mirror('books', this.cache.books);
@@ -405,6 +417,8 @@ class SupabaseAdapter {
     if ('totalPages' in patch) row.total_pages = patch.totalPages;
     if ('currentPage' in patch) row.current_page = patch.currentPage;
     if ('coverUrl' in patch) row.cover_url = patch.coverUrl;
+    if ('rating' in patch) row.rating = patch.rating;
+    if ('position' in patch) row.position = patch.position;
     try {
       const { error } = await this.sb.from('books').update(row).eq('id', id);
       if (error) throw error;
@@ -413,6 +427,24 @@ class SupabaseAdapter {
       this.mirror('books', this.cache.books);
       return book || null;
     } catch (e) { this.fail(e); return null; }
+  }
+  async setBookPositions(orderedIds) {
+    try {
+      const books = await this.listBooks();
+      const updates = [];
+      orderedIds.forEach((id, i) => {
+        const b = books.find(x => x.id === id);
+        if (b && b.position !== i) {
+          b.position = i;
+          updates.push(this.sb.from('books').update({ position: i }).eq('id', id));
+        }
+      });
+      const results = await Promise.all(updates);
+      for (const { error } of results) if (error) throw error;
+      this.cache.books.sort((a, b) =>
+        ((a.position ?? 1e12) - (b.position ?? 1e12)) || (a.createdAt - b.createdAt));
+      this.mirror('books', this.cache.books);
+    } catch (e) { this.fail(e); }
   }
   async deleteBook(id) {
     try {
@@ -542,7 +574,7 @@ async function migrate(remote) {
   ]);
   const bookIdMap = {};
   for (const b of books) {
-    const row = { title: b.title, author: b.author || '', total_pages: b.totalPages, current_page: b.currentPage || 0, cover_url: b.coverUrl || null };
+    const row = { title: b.title, author: b.author || '', total_pages: b.totalPages, current_page: b.currentPage || 0, cover_url: b.coverUrl || null, rating: b.rating || null, position: b.position ?? null };
     if (UUID_RE.test(b.id)) row.id = b.id;
     const { data, error } = await remote.sb.from('books').insert(row).select().single();
     if (error) throw error;
@@ -737,6 +769,7 @@ export const store = {
   listBooks: (...a) => adapter.listBooks(...a),
   addBook: (...a) => adapter.addBook(...a),
   updateBook: (...a) => adapter.updateBook(...a),
+  setBookPositions: (...a) => adapter.setBookPositions(...a),
   deleteBook: (...a) => adapter.deleteBook(...a),
   listBookEntries: (...a) => adapter.listBookEntries(...a),
   addBookEntry: (...a) => adapter.addBookEntry(...a),

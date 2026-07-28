@@ -17,6 +17,10 @@ let pendingCover = null;  // {url} chosen from a suggestion
 let searchSeq = 0;
 let debounceTimer = null;
 
+// Drag & drop state
+let draggedId = null;
+let justDragged = false;
+
 export function curly(text) {
   return getLang() === 'de' ? `„${text}“` : `“${text}”`;
 }
@@ -92,6 +96,43 @@ function renderPickedCover() {
     : '';
 }
 
+/* ── ratings ───────────────────────────────────────────────── */
+
+const ratingCache = new Map();
+
+async function fetchOfficialRating(book) {
+  const key = `${book.title}|${book.author || ''}`;
+  if (ratingCache.has(key)) return ratingCache.get(key);
+  try {
+    const ss = sessionStorage.getItem('rehato.olrating.' + key);
+    if (ss) { const v = JSON.parse(ss); ratingCache.set(key, v); return v; }
+  } catch { /* private mode */ }
+  try {
+    const url = `https://openlibrary.org/search.json?title=${encodeURIComponent(book.title)}`
+      + (book.author ? `&author=${encodeURIComponent(book.author)}` : '')
+      + `&fields=ratings_average,ratings_count&limit=1`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(res.status);
+    const doc = (await res.json()).docs?.[0];
+    const v = doc?.ratings_average
+      ? { avg: doc.ratings_average, count: doc.ratings_count || 0 }
+      : null;
+    ratingCache.set(key, v);
+    try { sessionStorage.setItem('rehato.olrating.' + key, JSON.stringify(v)); } catch { /* ignore */ }
+    return v;
+  } catch { return null; }
+}
+
+const starRow = n => '★'.repeat(n) + '☆'.repeat(5 - n);
+
+function userStarsHtml(rating) {
+  return `<span class="stars stars-user" role="radiogroup" aria-label="${t('book.yourRating')}">`
+    + Array.from({ length: 5 }, (_, i) =>
+        `<button class="star ${rating > i ? 'on' : ''}" data-rate="${i + 1}" role="radio"
+           aria-checked="${rating === i + 1}" aria-label="${i + 1}/5">${rating > i ? '★' : '☆'}</button>`).join('')
+    + '</span>';
+}
+
 /* ── shelf rendering ───────────────────────────────────────── */
 
 const SPINE_PALETTE = [
@@ -118,7 +159,7 @@ function shelfItem(b) {
   const label = `${b.title}${b.author ? ' – ' + b.author : ''}`;
   return `
     <span class="book-slot">
-      <button class="book-item ${b.coverUrl ? 'has-cover' : 'no-cover'}"
+      <button class="book-item ${b.coverUrl ? 'has-cover' : 'no-cover'}" draggable="true"
         style="--sw:${width}px;--sh:${height}px;--sbg:${bg};--sink:${ink}"
         data-open-book="${b.id}" title="${escapeHtml(label)}" aria-label="${escapeHtml(label)}">
         ${b.coverUrl
@@ -169,8 +210,22 @@ export function init(el) {
   container = el;
 
   container.addEventListener('click', async e => {
+    const rate = e.target.closest('[data-rate]');
+    if (rate && selectedId) {
+      const n = Number(rate.dataset.rate);
+      const book = (await store.listBooks()).find(b => b.id === selectedId);
+      await store.updateBook(selectedId, { rating: book?.rating === n ? null : n });
+      render();
+      return;
+    }
+
     const open = e.target.closest('[data-open-book]');
-    if (open) { selectedId = open.dataset.openBook; render(); return; }
+    if (open) {
+      if (justDragged) return;
+      selectedId = open.dataset.openBook;
+      render();
+      return;
+    }
     if (e.target.closest('[data-back]')) { selectedId = null; render(); return; }
 
     const viewBtn = e.target.closest('[data-books-view]');
@@ -260,6 +315,57 @@ export function init(el) {
       container.querySelector('#entry-page').value = '';
       render(true);
     }
+  });
+
+  // Drag & drop reordering on the shelf (desktop pointers).
+  container.addEventListener('dragstart', e => {
+    const item = e.target.closest('.book-item[data-open-book]');
+    if (!item || selectedId || viewMode !== 'shelf') { e.preventDefault(); return; }
+    draggedId = item.dataset.openBook;
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', draggedId);
+    requestAnimationFrame(() => item.classList.add('dragging'));
+  });
+  container.addEventListener('dragend', () => {
+    container.querySelectorAll('.dragging, .drop-left, .drop-right')
+      .forEach(el => el.classList.remove('dragging', 'drop-left', 'drop-right'));
+    if (draggedId) { justDragged = true; setTimeout(() => { justDragged = false; }, 180); }
+    draggedId = null;
+  });
+  container.addEventListener('dragover', e => {
+    if (!draggedId) return;
+    const slot = e.target.closest('.book-slot');
+    const zone = e.target.closest('.case-books');
+    if (!slot && !zone) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    container.querySelectorAll('.drop-left, .drop-right')
+      .forEach(el => el.classList.remove('drop-left', 'drop-right'));
+    if (slot) {
+      const r = slot.getBoundingClientRect();
+      slot.classList.add(e.clientX < r.left + r.width / 2 ? 'drop-left' : 'drop-right');
+    }
+  });
+  container.addEventListener('drop', async e => {
+    if (!draggedId) return;
+    const slot = e.target.closest('.book-slot');
+    const zone = e.target.closest('.case-books');
+    if (!slot && !zone) return;
+    e.preventDefault();
+    const dragged = draggedId;
+    const ids = (await store.listBooks()).map(b => b.id).filter(id => id !== dragged);
+    let insertAt = ids.length;
+    if (slot) {
+      const targetId = slot.querySelector('[data-open-book]')?.dataset.openBook;
+      const idx = ids.indexOf(targetId);
+      if (idx >= 0) {
+        const r = slot.getBoundingClientRect();
+        insertAt = e.clientX < r.left + r.width / 2 ? idx : idx + 1;
+      }
+    }
+    ids.splice(insertAt, 0, dragged);
+    await store.setBookPositions(ids);
+    render();
   });
 
   // Re-pack shelf rows when the window size changes.
@@ -414,6 +520,8 @@ async function renderDetail(focusInput = false) {
         <div class="detail-title">
           <h2>${escapeHtml(book.title)}</h2>
           ${book.author ? `<span class="book-author">${escapeHtml(book.author)}</span>` : ''}
+          <span id="ol-rating" class="ol-rating"></span>
+          <span class="your-rating"><span class="rating-label">${t('book.yourRating')}</span>${userStarsHtml(book.rating || 0)}</span>
         </div>
         <button class="icon-btn subtle" data-del-book="${book.id}" title="${t('book.delete')}" aria-label="${t('book.delete')}">✕</button>
       </div>
@@ -451,6 +559,18 @@ async function renderDetail(focusInput = false) {
       ${noteRows}
     </div>`;
   if (focusInput) container.querySelector('#entry-text')?.focus();
+
+  // Community rating from Open Library, filled in asynchronously.
+  const forBook = book.id;
+  fetchOfficialRating(book).then(v => {
+    if (!v || selectedId !== forBook) return;
+    const el = container.querySelector('#ol-rating');
+    if (!el) return;
+    const avg = v.avg.toLocaleString(locale(), { maximumFractionDigits: 1 });
+    el.innerHTML = `<span class="stars stars-ol" aria-hidden="true">${starRow(Math.round(v.avg))}</span>`
+      + ` ${avg} · ${t('book.ratings', { n: v.count.toLocaleString(locale()) })}`
+      + ` <span class="rating-src">(${t('book.ratingSource')})</span>`;
+  });
 }
 
 export async function render(focusInput = false) {

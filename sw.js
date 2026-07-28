@@ -1,5 +1,5 @@
 // ReHaTo service worker — offline cache (network-first) + notification host.
-const CACHE = 'rehato-v0.8.0';
+const CACHE = 'rehato-v0.9.0';
 const PRECACHE = [
   './', './index.html', './css/styles.css', './manifest.webmanifest', './icons/icon.svg',
   './js/main.js', './js/config.js', './js/i18n.js', './js/store.js', './js/ui.js',

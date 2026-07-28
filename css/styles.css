@@ -1013,6 +1013,30 @@ body.sb-anim .content { transition: margin-left .22s ease; }
   box-shadow: 0 1px 3px rgba(0, 0, 0, .3);
 }
 
+/* ratings */
+.ol-rating { display: block; margin-top: 8px; color: var(--muted); font-size: .84rem; min-height: 1.2em; }
+.stars-ol { color: #d9a13f; letter-spacing: 1px; font-size: .95rem; }
+.rating-src { opacity: .75; }
+.your-rating { display: flex; align-items: center; gap: 9px; margin-top: 4px; }
+.rating-label { font-size: .8rem; color: var(--muted); }
+.stars-user { display: inline-flex; gap: 1px; }
+.star {
+  font-size: 1.25rem;
+  line-height: 1;
+  color: var(--muted);
+  opacity: .55;
+  transition: transform .1s, color .15s, opacity .15s;
+  padding: 2px;
+}
+.star:hover { transform: scale(1.2); opacity: 1; color: #d9a13f; }
+.star.on { color: #d9a13f; opacity: 1; }
+
+/* drag & drop on the shelf */
+.book-item[draggable="true"] { cursor: grab; }
+.book-item.dragging { opacity: .35; }
+.book-slot.drop-left { box-shadow: -4px 0 0 var(--accent); border-radius: 2px; }
+.book-slot.drop-right { box-shadow: 4px 0 0 var(--accent); border-radius: 2px; }
+
 /* book detail cover */
 .detail-cover-wrap { position: relative; flex: none; }
 .detail-cover {

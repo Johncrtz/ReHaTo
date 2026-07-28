@@ -165,7 +165,7 @@ async function run() {
     if (e5) throw e5;
 
     const { data: book, error: e7 } = await sb.from('books')
-      .insert({ title: '🧪 SyncTest-Buch', total_pages: 100, cover_url: 'https://example.com/cover.jpg' }).select().single();
+      .insert({ title: '🧪 SyncTest-Buch', total_pages: 100, cover_url: 'https://example.com/cover.jpg', rating: 4, position: 999 }).select().single();
     if (e7) throw e7;
     const { error: e8 } = await sb.from('books').update({ current_page: 50 }).eq('id', book.id);
     if (e8) throw e8;

@@ -55,10 +55,14 @@ create table if not exists public.books (
   total_pages  integer check (total_pages > 0),
   current_page integer not null default 0 check (current_page >= 0),
   cover_url    text,
+  rating       smallint check (rating between 1 and 5),
+  position     integer,
   created_at   timestamptz not null default now()
 );
--- v0.7: cover images — safe to re-run on databases created before this column
+-- v0.7+: newer columns — safe to re-run on databases created earlier
 alter table public.books add column if not exists cover_url text;
+alter table public.books add column if not exists rating smallint check (rating between 1 and 5);
+alter table public.books add column if not exists position integer;
 
 -- Book entries: quotes & notes captured per book (kind = 'quote' | 'note')
 create table if not exists public.book_entries (
