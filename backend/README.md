@@ -44,24 +44,31 @@ credentials live in [`js/config.js`](../js/config.js).
    The file is **idempotent**: after app updates that add tables
    (e.g. v0.3 added `books` and `book_entries`), simply re-run the
    whole file — existing tables and data are untouched.
-2. In **Authentication → Sign In / Up → Auth Providers**, enable
-   **Anonymous sign-ins**. Keep **Email** enabled too (it is by
-   default) — it powers account securing and magic-link sign-in.
+2. Keep the **Email** provider enabled (it is by default) — it powers
+   sign-up, login and password reset. **Anonymous sign-ins are no
+   longer used** since v0.5 and can stay disabled.
 3. In **Authentication → URL Configuration**, set **Site URL** to
    `https://johncrtz.github.io/ReHaTo/` and add
    `https://johncrtz.github.io/ReHaTo/*` under **Redirect URLs**.
-   Without this, confirmation and magic-link emails redirect to
+   Without this, confirmation and reset emails redirect to
    `localhost:3000` (Supabase's default) and go nowhere.
 
-### Account model (v0.4)
+### Account model (v0.5)
 
-- **Local** → no account; data in the browser only.
-- **Anonymous** (☁ enable) → invisible account, browser-bound.
-- **Secured** → user links an email (confirmation link); same
-  user id, all rows kept, `is_anonymous` becomes false. Sign-in on
-  other devices via **magic link** (`signInWithOtp`) — passwordless.
-- Sign-out is only offered for secured accounts so anonymous data
-  can never be orphaned.
+Two states only:
+
+- **Local** → no account; data never leaves the browser.
+- **Account** → name + email + password (`signUp` with
+  `user_metadata.name`). On first sign-in/sign-up, local data is
+  uploaded once (only into an empty cloud). Sessions persist per
+  device and auto-refresh — **one login per device** until sign-out.
+- Password reset via email link (`resetPasswordForEmail` → in-app
+  “set new password” screen).
+- Email confirmation: ON by default in Supabase. The confirmation
+  link signs the user in automatically when opened. If you prefer
+  instant sign-ups without the email roundtrip, disable
+  **Authentication → Sign In / Up → Confirm email** — trade-off:
+  typo’d addresses create unreachable accounts.
 
 Note: Supabase's built-in email service is rate-limited to a few
 messages per hour — fine for personal use. For more, configure

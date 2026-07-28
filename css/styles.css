@@ -692,7 +692,11 @@ a:hover { text-decoration: underline; }
   font-weight: 700;
 }
 .acct-id-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-.acct-email { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.acct-name { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.acct-email { font-weight: 500; color: var(--muted); font-size: .9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.acct-seg { margin-bottom: 16px; }
+.acct-privacy { color: var(--accent); }
+.acct-linkish { margin-top: 8px; font-size: .86rem; }
 .acct-badge-line {
   display: inline-flex; align-items: center; gap: 5px;
   color: var(--accent);

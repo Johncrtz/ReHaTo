@@ -21,10 +21,9 @@ end-to-end test of the Supabase backend, with fix-it links for anything red
   and capture quotes & notes per book.
 - ❝ **Quotes** — every saved quote on one quiet wall, in italics with
   proper quotation marks and book attribution.
-- ☁️ **Opt-in anonymous cloud sync** (Supabase) — off by default; one tap
-  creates an anonymous account (no name/email) and keeps data synced.
-- 🔐 **Secure account** — link your email later (passwordless magic links)
-  to keep the account through browser cleanups and sign in on any device.
+- 🔐 **Optional account** (Supabase) — local-only by default; create an
+  account (name, email, password) to sync to the cloud and sign in on any
+  device. One login per device — sessions persist and refresh themselves.
 - 🌗 Dark/light mode · 🇩🇪/🇬🇧 language toggle · 📲 installable as a PWA ·
   works offline.
 
