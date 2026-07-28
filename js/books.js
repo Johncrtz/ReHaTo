@@ -131,6 +131,38 @@ function shelfItem(b) {
     </span>`;
 }
 
+// Estimated on-shelf width per book (px, incl. gap) for row packing.
+function estWidth(b) {
+  if (b.coverUrl) return 100 + 13;
+  const h = hashStr(b.title + (b.author || ''));
+  return 34 + (h % 15) + 13;
+}
+
+const CASE_STYLES = ['wood', 'modern', 'cozy'];
+
+function bookcaseHtml(books, style, containerWidth) {
+  const inner = Math.max(240, (containerWidth || 640) - 24 - 24 - 24);
+  const rows = [[]];
+  let acc = 0;
+  for (const b of books) {
+    const w = estWidth(b);
+    if (acc + w > inner * 0.88 && rows[rows.length - 1].length) { rows.push([]); acc = 0; }
+    rows[rows.length - 1].push(b);
+    acc += w;
+  }
+  while (rows.length < 2) rows.push([]); // a real cabinet has room to grow
+  const rowHtml = rows.map((row, i) => `
+    <div class="case-row">
+      <div class="case-books">
+        ${!books.length && i === 0 ? `<span class="case-empty-text">${t('book.shelfEmpty')}</span>` : ''}
+        ${row.map(shelfItem).join('')}
+        ${style === 'cozy' && i === rows.length - 1 ? '<span class="case-deco">🪴</span>' : ''}
+      </div>
+      <div class="case-board"></div>
+    </div>`).join('');
+  return `<div class="bookcase case-${style}"><div class="case-body">${rowHtml}</div></div>`;
+}
+
 /* ── view init / events ────────────────────────────────────── */
 
 export function init(el) {
@@ -145,6 +177,13 @@ export function init(el) {
     if (viewBtn) {
       viewMode = viewBtn.dataset.booksView;
       await store.patchSettings({ booksView: viewMode });
+      render();
+      return;
+    }
+
+    const styleBtn = e.target.closest('[data-shelf-style]');
+    if (styleBtn) {
+      await store.patchSettings({ shelfStyle: styleBtn.dataset.shelfStyle });
       render();
       return;
     }
@@ -223,6 +262,14 @@ export function init(el) {
     }
   });
 
+  // Re-pack shelf rows when the window size changes.
+  let resizeTimer = null;
+  window.addEventListener('resize', () => {
+    if (selectedId || viewMode !== 'shelf' || !container.offsetParent) return;
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => render(), 200);
+  });
+
   container.addEventListener('change', async e => {
     if (e.target.id !== 'cur-page' && e.target.id !== 'tot-pages') return;
     const cur = Math.max(0, parseInt(container.querySelector('#cur-page').value, 10) || 0);
@@ -273,6 +320,7 @@ async function renderOverview() {
     store.listBooks(), store.listBookEntries(), store.getSettings(),
   ]);
   viewMode = settings.booksView || 'shelf';
+  const shelfStyle = CASE_STYLES.includes(settings.shelfStyle) ? settings.shelfStyle : 'wood';
 
   const addForm = `
     <div class="card">
@@ -290,9 +338,18 @@ async function renderOverview() {
       </form>
     </div>`;
 
+  const stylePicker = viewMode === 'shelf' ? `
+      <div class="case-picker">
+        ${CASE_STYLES.map(cs => `
+          <button class="case-pick case-pick-${cs} ${cs === shelfStyle ? 'active' : ''}"
+            data-shelf-style="${cs}" title="${t('book.style' + cs[0].toUpperCase() + cs.slice(1))}"
+            aria-label="${t('book.style' + cs[0].toUpperCase() + cs.slice(1))}"><span></span></button>`).join('')}
+      </div>` : '';
+
   const toggle = `
     <div class="books-head">
       <span class="card-title">${t('nav.books')}${books.length ? ` (${books.length})` : ''}</span>
+      ${stylePicker}
       <div class="view-toggle">
         <button class="icon-btn ${viewMode === 'shelf' ? 'active' : ''}" data-books-view="shelf" title="${t('book.viewShelf')}" aria-label="${t('book.viewShelf')}">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 19h16"/><path d="M6 19V9m4 10V6m4 13v-9m4 9V8"/></svg>
@@ -304,10 +361,8 @@ async function renderOverview() {
     </div>`;
 
   let body;
-  if (!books.length) {
-    body = `<div class="shelf shelf-minimal empty"><span class="shelf-empty-text">${t('book.shelfEmpty')}</span></div>`;
-  } else if (viewMode === 'shelf') {
-    body = `<div class="shelf shelf-minimal">${books.map(shelfItem).join('')}</div>`;
+  if (viewMode === 'shelf' || !books.length) {
+    body = bookcaseHtml(books, shelfStyle, container.clientWidth);
   } else {
     body = `<div class="book-list">${listRows(books, entries)}</div>`;
   }

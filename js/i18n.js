@@ -154,6 +154,9 @@ const dict = {
     'book.viewList': 'Listenansicht',
     'book.count': '{n} Buch/Bücher',
     'book.shelfEmpty': 'Dein Regal ist noch leer. Füge dein erstes Buch hinzu – es stellt sich dann hier auf. 📚',
+    'book.styleWood': 'Holz',
+    'book.styleModern': 'Modern',
+    'book.styleCozy': 'Verspielt',
     'info.dataBody3': 'Die Buchsuche fragt openlibrary.org an (nur der eingegebene Suchtext); Cover-Bilder werden von dort geladen.',
   },
   en: {
@@ -310,6 +313,9 @@ const dict = {
     'book.viewList': 'List view',
     'book.count': '{n} book(s)',
     'book.shelfEmpty': 'Your shelf is still empty. Add your first book – it will appear right here. 📚',
+    'book.styleWood': 'Wood',
+    'book.styleModern': 'Modern',
+    'book.styleCozy': 'Playful',
     'info.dataBody3': 'Book search queries openlibrary.org (only the typed search text); cover images are loaded from there.',
   },
 };

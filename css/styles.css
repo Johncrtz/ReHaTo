@@ -810,65 +810,143 @@ body.sb-anim .content { transition: margin-left .22s ease; }
 .picked-cover { display: inline-flex; align-items: center; gap: 2px; }
 .picked-cover img { height: 38px; border-radius: 3px; box-shadow: 0 1px 3px rgba(0,0,0,.2); }
 
-/* ── bookshelf ──────────────────────────────────────────── */
-.books-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-.books-head .card-title { margin: 0; }
+/* ── bookcase ───────────────────────────────────────────── */
+.books-head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.books-head .card-title { margin: 0; flex: 1; }
 .view-toggle { display: flex; gap: 2px; }
 .view-toggle .icon-btn svg { width: 17px; height: 17px; }
 .view-toggle .icon-btn.active { background: var(--accent-soft); color: var(--accent); }
 
-.shelf {
-  --slot-h: 164px;
-  --row-gap: 12px;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  column-gap: 13px;
-  row-gap: var(--row-gap);
-  padding: 6px 10px 12px;
-  background-repeat: repeat;
-}
-.shelf-minimal {
-  background-image: repeating-linear-gradient(
-    to bottom,
-    transparent 0 var(--slot-h),
-    var(--line) var(--slot-h) calc(var(--slot-h) + 2px),
-    transparent calc(var(--slot-h) + 2px) calc(var(--slot-h) + var(--row-gap))
-  );
-  background-position: 0 6px;
-}
-.shelf-wood {
-  --board1: #c2a077;
-  --board2: #a3805a;
-  background-image: repeating-linear-gradient(
-    to bottom,
-    transparent 0 var(--slot-h),
-    var(--board1) var(--slot-h) calc(var(--slot-h) + 3px),
-    var(--board2) calc(var(--slot-h) + 3px) calc(var(--slot-h) + 7px),
-    rgba(0,0,0,.12) calc(var(--slot-h) + 7px) calc(var(--slot-h) + 8px),
-    transparent calc(var(--slot-h) + 8px) calc(var(--slot-h) + var(--row-gap))
-  );
-  background-position: 0 6px;
-}
-:root[data-theme="dark"] .shelf-wood { --board1: #6d5740; --board2: #57432f; }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .shelf-wood { --board1: #6d5740; --board2: #57432f; }
-}
-.shelf.empty { min-height: calc(var(--slot-h) + 14px); position: relative; }
-.shelf-empty-text {
-  position: absolute;
-  inset: 0 10px 20px;
-  display: flex;
-  align-items: flex-end;
+/* style picker — three mini cabinet swatches */
+.case-picker { display: flex; gap: 6px; }
+.case-pick {
+  width: 30px; height: 26px;
+  border-radius: 6px;
+  border: 2px solid transparent;
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
-  padding-bottom: 26px;
-  color: var(--muted);
-  text-align: center;
+  padding: 3px;
+  transition: border-color .15s, transform .1s;
 }
+.case-pick:hover { transform: scale(1.08); }
+.case-pick.active { border-color: var(--accent); }
+.case-pick span { display: block; width: 100%; height: 100%; border-radius: 3px; }
+.case-pick-wood span { background: linear-gradient(#c9a87c, #a3805a); }
+.case-pick-modern span { background: #2e2c27; border-radius: 1px; }
+.case-pick-cozy span { background: #cfe0cf; border-radius: 7px; }
+
+/* shared cabinet skeleton: frame → body (back panel) → rows (compartments) */
+.bookcase { border-radius: 12px; }
+.case-body {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.case-row { position: relative; }
+.case-books {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: 13px;
+  height: 172px;
+  padding: 0 14px;
+  overflow: hidden;
+  /* depth: soft shadow from the board above onto the back panel */
+  box-shadow: inset 0 16px 22px -16px rgba(0, 0, 0, .30);
+}
+.case-board { flex: none; }
+.case-empty-text {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 0 20px;
+  color: var(--muted);
+}
+.case-deco {
+  font-size: 1.55rem;
+  margin-left: auto;
+  padding-bottom: 1px;
+  filter: drop-shadow(1px 2px 2px rgba(0,0,0,.2));
+}
+
+/* ── design 1: warm wood cabinet ── */
+.case-wood {
+  padding: 13px;
+  background: linear-gradient(150deg, #c9a87c, #ab8760 55%, #9a7752);
+  box-shadow: 0 14px 30px -18px rgba(70, 50, 25, .55), inset 0 1px 0 rgba(255,255,255,.25);
+}
+.case-wood .case-body { border-radius: 5px; background: #efe7d6; }
+.case-wood .case-board {
+  height: 10px;
+  background: linear-gradient(#cfae83, #ab8760 60%, #8f6f4c);
+  box-shadow: 0 2px 3px rgba(0, 0, 0, .28);
+}
+.case-wood .case-row:last-child .case-board { box-shadow: none; }
+
+/* ── design 2: modern, schlicht elegant ── */
+.case-modern {
+  padding: 9px;
+  border-radius: 4px;
+  background: #2e2c27;
+  box-shadow: 0 14px 30px -18px rgba(0, 0, 0, .5);
+}
+.case-modern .case-body { border-radius: 1px; background: #f2f0e9; }
+.case-modern .case-books { box-shadow: inset 0 14px 20px -16px rgba(0, 0, 0, .22); }
+.case-modern .case-board { height: 6px; background: #2e2c27; }
+
+/* ── design 3: verspielt & gemütlich ── */
+.case-cozy {
+  padding: 13px;
+  border-radius: 22px;
+  background: linear-gradient(160deg, #dbe7da, #c4d6c4);
+  box-shadow: 0 14px 30px -18px rgba(60, 90, 65, .45);
+}
+.case-cozy .case-body {
+  border-radius: 12px;
+  background: #faf6ec;
+  background-image: radial-gradient(rgba(78, 127, 98, .13) 1.3px, transparent 1.4px);
+  background-size: 17px 17px;
+}
+.case-cozy .case-books { box-shadow: inset 0 14px 20px -16px rgba(60, 90, 65, .25); }
+.case-cozy .case-board {
+  height: 9px;
+  background: linear-gradient(#cfe0cf, #b3c9b3);
+  box-shadow: 0 2px 3px rgba(60, 90, 65, .3);
+  border-radius: 0 0 3px 3px;
+}
+
+/* dark mode for all three cabinets */
+:root[data-theme="dark"] .case-wood { background: linear-gradient(150deg, #7a6146, #5f4a33 55%, #4e3c28); box-shadow: 0 14px 30px -18px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,255,255,.08); }
+:root[data-theme="dark"] .case-wood .case-body { background: #29231a; }
+:root[data-theme="dark"] .case-wood .case-board { background: linear-gradient(#7a6146, #5f4a33 60%, #46351f); }
+:root[data-theme="dark"] .case-modern { background: #4b4e47; }
+:root[data-theme="dark"] .case-modern .case-body { background: #20231f; }
+:root[data-theme="dark"] .case-modern .case-board { background: #4b4e47; }
+:root[data-theme="dark"] .case-cozy { background: linear-gradient(160deg, #38453a, #2c3a2f); }
+:root[data-theme="dark"] .case-cozy .case-body { background: #232a23; background-image: radial-gradient(rgba(133, 180, 148, .14) 1.3px, transparent 1.4px); background-size: 17px 17px; }
+:root[data-theme="dark"] .case-cozy .case-board { background: linear-gradient(#44543f, #35452f); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .case-wood { background: linear-gradient(150deg, #7a6146, #5f4a33 55%, #4e3c28); box-shadow: 0 14px 30px -18px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,255,255,.08); }
+  :root:not([data-theme="light"]) .case-wood .case-body { background: #29231a; }
+  :root:not([data-theme="light"]) .case-wood .case-board { background: linear-gradient(#7a6146, #5f4a33 60%, #46351f); }
+  :root:not([data-theme="light"]) .case-modern { background: #4b4e47; }
+  :root:not([data-theme="light"]) .case-modern .case-body { background: #20231f; }
+  :root:not([data-theme="light"]) .case-modern .case-board { background: #4b4e47; }
+  :root:not([data-theme="light"]) .case-cozy { background: linear-gradient(160deg, #38453a, #2c3a2f); }
+  :root:not([data-theme="light"]) .case-cozy .case-body { background: #232a23; background-image: radial-gradient(rgba(133, 180, 148, .14) 1.3px, transparent 1.4px); background-size: 17px 17px; }
+  :root:not([data-theme="light"]) .case-cozy .case-board { background: linear-gradient(#44543f, #35452f); }
+}
+
+/* books inside compartments */
 .book-slot {
-  height: var(--slot-h);
+  height: 164px;
   display: inline-flex;
   align-items: flex-end;
+  flex: none;
 }
 .book-item {
   position: relative;
@@ -882,7 +960,7 @@ body.sb-anim .content { transition: margin-left .22s ease; }
   height: 148px;
   max-width: 104px;
   border-radius: 2px 4px 4px 2px;
-  box-shadow: 1px 2px 6px rgba(0, 0, 0, .22);
+  box-shadow: 2px 3px 7px rgba(0, 0, 0, .32);
 }
 .book-item.has-cover .spine-body { display: none; }
 .book-item.no-cover {
@@ -890,7 +968,7 @@ body.sb-anim .content { transition: margin-left .22s ease; }
   height: var(--sh, 136px);
   background: var(--sbg, var(--accent));
   border-radius: 2px 4px 4px 2px;
-  box-shadow: inset 3px 0 0 rgba(255, 255, 255, .16), inset -2px 0 0 rgba(0, 0, 0, .1), 1px 2px 6px rgba(0, 0, 0, .22);
+  box-shadow: inset 3px 0 0 rgba(255, 255, 255, .16), inset -2px 0 0 rgba(0, 0, 0, .1), 2px 3px 7px rgba(0, 0, 0, .32);
 }
 .spine-body {
   display: flex;
